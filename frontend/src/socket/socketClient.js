@@ -1,0 +1,26 @@
+import {io} from "socket.io-client"
+let socket=null;
+
+export const connectSocket=()=>{
+    if(!socket){
+       socket=io("http://localhost:8005",{
+        withCredentials: true
+       });
+       console.log("socket connected")
+    }
+    return socket;
+    
+}
+export const getSocket=()=>{
+    if(socket){
+        return socket;
+    }
+}
+
+export const disconnectSocket=()=>{
+    if(socket){
+        socket.disconnect();
+        console.log("socket disconnected");
+        socket=null;
+    }
+}
