@@ -11,9 +11,9 @@ const initialState={
     selectedUserId:null,
     realTimeData:{
         status:false,
-        userTyping:false,
-        lastSeen:false
+        lastseen:null
     },
+    // onlineUsers:[]
 }
 const chatSlice=createSlice({
     name:'chat',
@@ -57,7 +57,10 @@ const chatSlice=createSlice({
         },
         setRealTimeData:(state,action)=>{
             state.realTimeData=action.payload
-        }
+        },
+        // setOnlineUsers:(state,action)=>{
+        //     state.onlineUsers=action.payload;
+        // }
     }
 })
 export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,setRealTimeData}=chatSlice.actions;

@@ -62,8 +62,19 @@ async function handleProfile(req,res){
     
 
 }
+async function handleLastseen(req,res){
+    const id=req.params.selectedUserId
+    const data=await User.findOne({
+        _id:id
+    })
+    return res.status(200).json({
+        lastseen:data.lastseen
+    })
+
+}
 module.exports={
     handleProfile,
     handleSignin,
-    handleSignup
+    handleSignup,
+    handleLastseen
 }

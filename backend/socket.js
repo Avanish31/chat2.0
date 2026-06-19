@@ -1,8 +1,9 @@
 const cookie = require('cookie');
+const User=require('./models/user');
+let onlineUsers=new Set();
 function initSocket(io, validateToken){
     io.use((socket,next)=>{
         const rawCookie=socket.handshake.headers.cookie;
-        console.log(rawCookie);
         const cookies=cookie.parse(rawCookie);
         const token=cookies.token;
         socket.userEmail=validateToken(token).email;
@@ -10,23 +11,31 @@ function initSocket(io, validateToken){
         socket.name=validateToken(token).name;
         next();
     })
-    const onlineUsers=new Set();
+    
     io.on('connection',(socket)=>{
         socket.join(socket.userId)//this creates a room of socket ids for this id
         socket.broadcast.emit('userOnline',{
            userId:socket.userId
         })
         onlineUsers.add(socket.userId);
-        socket.emit('currentlyOnline',Array.from(onlineUsers));
+        onlineUsers.forEach((user)=>{
+            
+        })
         socket.on('disconnect',async()=>{
+            
             const room=io.sockets.adapter.rooms.get(socket.userId);
             if(!room || room.size===0){
             onlineUsers.delete(socket.userId);
+            const now = new Date();
+            const lastseen= now.toLocaleDateString()+" on "+now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
             socket.broadcast.emit('userOffline',{
-                userId:socket.userId
+                userId:socket.userId,
+                lastseen:lastseen
             })
-           
-            
+            await User.findByIdAndUpdate(
+                socket.userId,
+                { lastseen:lastseen }
+            );
         }
         
         })
@@ -55,4 +64,5 @@ function initSocket(io, validateToken){
 }
 module.exports={
     initSocket,
+    onlineUsers
 }

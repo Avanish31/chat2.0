@@ -15,9 +15,11 @@ export const getSocket=()=>{
     if(socket){
         return socket;
     }
+    return null;
 }
 
 export const disconnectSocket=()=>{
+  
     if(socket){
         socket.disconnect();
         console.log("socket disconnected");

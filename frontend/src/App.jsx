@@ -4,9 +4,11 @@ import { Outlet } from 'react-router-dom'
 import { useDispatch ,useSelector} from 'react-redux'
 import axios from 'axios'
 import {login,logout}  from './features/auth/state/authSlice'
-import { connectSocket, disconnectSocket, getSocket } from './socket/socketClient'
+import { initSocket } from './socket/socketEvent'
+import { connectSocket, disconnectSocket } from './socket/socketClient'
 function App() {
   const dispatch=useDispatch()
+  const selectedUserId=useSelector((state)=>state.chat.selectedUserId);
   useEffect(()=>{
       axios.get('/api/user/getProfile').then((res)=>{
         dispatch(login({
@@ -15,6 +17,7 @@ function App() {
                 email:res.data.email
             }
         }))
+        
        
       }).catch(()=>{
         dispatch(logout());
@@ -22,6 +25,20 @@ function App() {
     
     
   },[])
+  const userData=useSelector((state)=>state.auth.userData);
+  
+   const realTimeData=useSelector(state=>state.chat.realTimeData);
+   console.log("realTimeData"+realTimeData.status);
+  
+  useEffect(()=>{
+    if(userData){
+      const socket=connectSocket();
+      initSocket(socket,selectedUserId,dispatch);
+    }
+    else{
+      disconnectSocket()
+    }
+  },[userData])
   
   return (
     <>

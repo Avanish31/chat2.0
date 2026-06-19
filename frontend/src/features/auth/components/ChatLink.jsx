@@ -1,10 +1,11 @@
 import { useNavigate } from "react-router-dom"
 import { chatAuth } from "../services/chatAuth"
-import { useDispatch } from 'react-redux';
+import { useDispatch,useSelector } from 'react-redux';
 function ChatLink() {
     const navigate=useNavigate();
+    const userData=useSelector(state=>state.auth.userData);
     const chatHandler=()=>{
-        chatAuth(navigate,useDispatch);
+      navigate('/chat');
     }
   return (
     <>

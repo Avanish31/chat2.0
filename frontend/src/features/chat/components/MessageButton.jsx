@@ -7,13 +7,16 @@ function MessageButton({message}) {
   const receiverId=useSelector(state=>state.chat.selectedUserId);
   const friends=useSelector(state=>state.chat.friends);
   const byId=friends.byId;
-  const conversationId=byId[receiverId].conversationId;
+  const conversationId=byId[receiverId]?.conversationId;
+  console.log(conversationId);
   const user=useSelector(state=>state.auth.userData);
-  const senderId=user.id;
+
+  console.log(user);
+  const senderId=user?.id;
   
-  const sendMessage=async()=>{
+  const sendMessage=()=>{
     dispatch(addMessages({
-    conversationId:receiverId,
+    conversationId:conversationId,
     senderId:senderId,
     receiverId:receiverId,
     message:message,

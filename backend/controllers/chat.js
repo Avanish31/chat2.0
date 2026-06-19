@@ -1,6 +1,7 @@
 const Conversation=require('../models/conversation')
 const Message=require('../models/message')
 const User=require('../models/user');
+const {onlineUsers}=require('../socket');
 async function InitialChatLoader(req,res){
     const chats=await Conversation.find({
         participants:req.user._id
@@ -70,9 +71,16 @@ async function messageHandler(req,res){
     })
     
 }
+async function statusHandler(req,res){
+    const userId=req.params.id;
+   return res.status(200).json({
+        status: onlineUsers.has(userId)
+    });
+}
 module.exports={
     InitialChatLoader,
     searchHandler,
     newChatHandler,
-    messageHandler
+    messageHandler,
+    statusHandler
 }

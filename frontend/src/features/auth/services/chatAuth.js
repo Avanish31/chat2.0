@@ -1,12 +1,13 @@
 import axios from 'axios'
 import {setFriends,setChatMeta,addFriend,setSelectedUserId} from '../../chat/state/chat'
-export async function chatAuth(navigate,dispatch){
-    
+
+export async function chatAuth(dispatch,navigate){
     try{
     const res=await axios.get('/api/chat');
+    console.log('data fetched');
     const data=res.data;
     if(data.length>0){
-    const friend=data.map(user=>({
+    const friend=data.map(user=>({  
         id:user.id,
         name:user.name,
         email:user.email,
@@ -15,7 +16,9 @@ export async function chatAuth(navigate,dispatch){
         blockedYou: user.blockedYou,
         conversationId:user.conversationId
     })
-    )   
+    
+    ) 
+    console.log(friend)  
     const chatMeta=data.map(user=>({
         id:user.id,
         lastMessage:user.lastMessage,
@@ -27,8 +30,9 @@ export async function chatAuth(navigate,dispatch){
     dispatch(setChatMeta(chatMeta));
     
     }
-    navigate('/chat');
+    
     }catch(err){
+        console.log('error while loading chats');
         navigate('/signin');
     }
 }

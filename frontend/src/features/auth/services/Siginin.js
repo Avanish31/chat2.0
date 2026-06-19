@@ -15,7 +15,6 @@ export async function Signinfn(data,setError,reset,dispatch,login,navigate){
             }
         }))
         console.log("loggin sucern");
-        connectSocket();
         navigate('/');
         reset();
 

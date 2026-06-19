@@ -10,13 +10,13 @@ import {useSelector} from 'react-redux'
 import { useDispatch } from 'react-redux'
 import axios from 'axios'
 import {fetchData} from '../services/newChatHandle'
-import { setSelectedUserId } from '../state/chat'
+import { setRealTimeData, setSelectedUserId } from '../state/chat'
 function MainBar() {
   const [user,setUser]=useState(null);
   const {id}=useParams();
   const dispatch=useDispatch();
+  
   const friends=useSelector(state=>state.chat.friends);
- 
   const byId=friends.byId;
  console.log(id);
  useEffect(() => {
@@ -24,7 +24,11 @@ function MainBar() {
   if(!id){
     return;
   }
+  else{
+    dispatch(setSelectedUserId(id));
+  }
   if(byId[id]){
+    
     setUser(byId[id]);
   }
   else{
@@ -37,10 +41,30 @@ function MainBar() {
     }
   };
   loadUser();
+  const loadRealTimeData=async()=>{
+    const res=await axios.get(`/api/chat/status/${id}`);
+    if(res.data.status){
+      dispatch(setRealTimeData({
+        status:true,
+        lastseen:null
+      }))
+    }
+    else{
+      await axios.get(`/api/user/lastseen/${id}`).then((res)=>{
+          dispatch(setRealTimeData({
+              status:false,
+              lastseen:res.data.lastseen
+          }))
+      })
+    }
+  }
+  loadRealTimeData()
 }
-  dispatch(setSelectedUserId(id));
+  
 }, [id,byId]);
-
+const realTimeData=useSelector(state=>state.chat.realTimeData);
+const lastseen=realTimeData.lastseen;
+const status=realTimeData.status;
 
   return (
     <div className='w-[65%] h-screen text-white bg-[#0B141A] flex flex-col'>
@@ -51,13 +75,13 @@ function MainBar() {
           <img className="w-16 h-16 rounded-full" src={user.profileImage}/>
           <div className='flex flex-col justify-center'>
             <p>{user.name}</p>
-            <LastSeen lastSeen={user.lastSeen} />
+          {!status&& lastseen?<>{lastseen}</>:null}
           </div>
         </div>
         <div className=' w-[40%] flex items-center justify-evenly  '>
           <DeleteChat />
           <Block />
-          <Online />
+          {status?<img  className='w-8 h-8 rounded-full' src='/images/online.png'/>:<img  className='w-8 h-8 rounded-full' src='/images/offline.png'/>}
         </div>
       </div>
       <ChatWindow />
