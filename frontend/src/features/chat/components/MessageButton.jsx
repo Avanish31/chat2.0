@@ -20,7 +20,7 @@ function MessageButton({message}) {
     senderId:senderId,
     receiverId:receiverId,
     message:message,
-    messageType:text,
+    messageType:"text",
     }))
   }
   return (

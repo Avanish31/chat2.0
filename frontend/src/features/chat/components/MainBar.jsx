@@ -18,6 +18,7 @@ function MainBar() {
   
   const friends=useSelector(state=>state.chat.friends);
   const byId=friends.byId;
+  const conversationId=byId[id]?.conversationId;
  console.log(id);
  useEffect(() => {
   console.log("inside useffect");
@@ -34,7 +35,8 @@ function MainBar() {
   else{
     console.log(id);
   const loadUser = async () => {
-    if (id && !user) {
+    if (id) {
+      console.log("inside loadUser");
       const data = await fetchData(id);
       console.log(data);
       setUser(data); 
@@ -58,10 +60,19 @@ function MainBar() {
       })
     }
   }
-  loadRealTimeData()
+  loadRealTimeData();
+  const loadMessages=async()=>{
+    if(conversationId){
+      await axios.get(`/api/chat/${conversationId}`).then(async(res)=>{
+        dispatch(setMessages(res.data.messages));
+      });
+    }
+  }
+  loadMessages();
 }
   
 }, [id,byId]);
+console.log(user?.name);
 const realTimeData=useSelector(state=>state.chat.realTimeData);
 const lastseen=realTimeData.lastseen;
 const status=realTimeData.status;

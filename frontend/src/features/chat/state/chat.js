@@ -42,6 +42,7 @@ const chatSlice=createSlice({
             state.freinds.allIds.push(user.id);
         },
         setSelectedUserId:(state,action)=>{
+            console.log("triggered")
             state.selectedUserId=action.payload;
             console.log(action.payload);
         },

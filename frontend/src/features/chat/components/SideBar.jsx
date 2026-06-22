@@ -13,6 +13,7 @@ function SideBar() {
   const allIds=friends.allIds;
   const chatMeta=useSelector(state=>state.chat.chatMeta);
   const searchResult=useSelector(state=>state.chat.searchResult);
+  console.log(searchResult);
   const [email,setEmail]=useState("");
   const dispatch=useDispatch();
   useEffect(()=>{
@@ -43,7 +44,7 @@ function SideBar() {
       lastMessage={chatMeta[id]?.lastMessage}
       unreadCount={chatMeta[id].unreadCount}
       id={id}
-      conversationId={byId[id].conversationId}
+      
       />
     ))}
     </div>
