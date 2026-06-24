@@ -77,10 +77,21 @@ async function statusHandler(req,res){
         status: onlineUsers.has(userId)
     });
 }
+async function newFriendHandler(req,res) {
+    const userId=req.params.id;
+    const user=await User.findOne({_id:userId});
+    return res.status(200).json({
+        name:user.name,
+        email:user.email,
+        profileImage:user.profileImage
+    })
+}
+
 module.exports={
     InitialChatLoader,
     searchHandler,
     newChatHandler,
     messageHandler,
-    statusHandler
+    statusHandler,
+    newFriendHandler,
 }

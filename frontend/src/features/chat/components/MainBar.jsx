@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import LastSeen from './LastSeen'
 import Block from './Block'
-import Online from './Online'
 import DeleteChat from './DeleteChat'
 import ChatWindow from './ChatWindow'
 import SendMessage from './SendMessage'
@@ -10,15 +9,17 @@ import {useSelector} from 'react-redux'
 import { useDispatch } from 'react-redux'
 import axios from 'axios'
 import {fetchData} from '../services/newChatHandle'
-import { setRealTimeData, setSelectedUserId } from '../state/chat'
+import { setRealTimeData, setSelectedUserId,setMessages } from '../state/chat'
 function MainBar() {
   const [user,setUser]=useState(null);
   const {id}=useParams();
   const dispatch=useDispatch();
-  
   const friends=useSelector(state=>state.chat.friends);
+  console.log(friends);
+ 
   const byId=friends.byId;
   const conversationId=byId[id]?.conversationId;
+  console.log(conversationId)
  console.log(id);
  useEffect(() => {
   console.log("inside useffect");
@@ -43,6 +44,7 @@ function MainBar() {
     }
   };
   loadUser();
+}
   const loadRealTimeData=async()=>{
     const res=await axios.get(`/api/chat/status/${id}`);
     if(res.data.status){
@@ -62,14 +64,15 @@ function MainBar() {
   }
   loadRealTimeData();
   const loadMessages=async()=>{
+     console.log("conversationId "+conversationId);
     if(conversationId){
-      await axios.get(`/api/chat/${conversationId}`).then(async(res)=>{
+      await axios.get(`/api/chat/getMessages/${conversationId}`).then(async(res)=>{
         dispatch(setMessages(res.data.messages));
       });
     }
   }
   loadMessages();
-}
+
   
 }, [id,byId]);
 console.log(user?.name);

@@ -14,7 +14,8 @@ function App() {
         dispatch(login({
           userData:{
                 name:res.data.name,
-                email:res.data.email
+                email:res.data.email,
+                id:res.data.id
             }
         }))
         
@@ -26,14 +27,15 @@ function App() {
     
   },[])
   const userData=useSelector((state)=>state.auth.userData);
-  
-   const realTimeData=useSelector(state=>state.chat.realTimeData);
-   console.log("realTimeData"+realTimeData.status);
+  const friends=useSelector(state=>state.chat.friends);
+  console.log("selecteduserId "+selectedUserId);
+  const realTimeData=useSelector(state=>state.chat.realTimeData);
+
   
   useEffect(()=>{
     if(userData){
       const socket=connectSocket();
-      initSocket(socket,selectedUserId,dispatch);
+      initSocket(socket,selectedUserId,dispatch,friends);
     }
     else{
       disconnectSocket()

@@ -8,12 +8,19 @@ import { useDispatch } from 'react-redux';
 import { setSearchResult } from '../state/chat';
 function SideBar() {
   const [isSearching,setIsSearching]=useState(false);
+  
   const friends=useSelector(state=>state.chat.friends);
   const byId=friends.byId;
   const allIds=friends.allIds;
   const chatMeta=useSelector(state=>state.chat.chatMeta);
+  const sortedChatMeta = Object.entries(chatMeta)
+  .map(([userId, data]) => ({
+    userId,
+    ...data
+  }))
+  .sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
   const searchResult=useSelector(state=>state.chat.searchResult);
-  console.log(searchResult);
+  
   const [email,setEmail]=useState("");
   const dispatch=useDispatch();
   useEffect(()=>{
@@ -35,22 +42,21 @@ function SideBar() {
    {email && (
   <SearchResultBox email={email} searchResult={searchResult} />
 )}
-    {!isSearching &&(
+    
     <div className='w-full overflow-y-auto '>
-    {allIds.map(id=>(
+    {sortedChatMeta.map(user=>(
       <ChatCard 
-      name={byId[id].name}
-      profileImage={byId[id].profileImage}
-      lastMessage={chatMeta[id]?.lastMessage}
-      unreadCount={chatMeta[id].unreadCount}
-      id={id}
-      
+      name={byId[user.userId].name}
+      profileImage={byId[user.userId].profileImage}
+      lastMessage={user.lastMessage}
+      unreadCount={user.unreadCount}
+      id={user.userId}
+      key={user.userId}
       />
     ))}
     </div>
     
-    )
-    }
+    
     
     </div>
     </>

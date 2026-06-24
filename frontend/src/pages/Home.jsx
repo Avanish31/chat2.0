@@ -4,7 +4,7 @@ import  Container  from '../partials/Container';
 import { useSelector } from 'react-redux';
 function Home() {
     const user=useSelector((state)=>state.auth.userData);
-    console.log(user);
+  
   return (
       <>
       <NavBar user={user}/>

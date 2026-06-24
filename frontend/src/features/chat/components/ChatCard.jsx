@@ -8,7 +8,7 @@ import axios from 'axios'
 function ChatCard({name,profileImage,lastMessage=null,unreadCount=0 ,id}) {
   const navigate=useNavigate();
   const dispatch=useDispatch();
-  console.log("chatcard");
+
   // const onlineUsers=useSelector((state)=>state.chat.onlineUsers);
   const handleChatWindow=async()=>{
     navigate(`/chat/${id}`)

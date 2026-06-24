@@ -6,12 +6,12 @@ export async function Signinfn(data,setError,reset,dispatch,login,navigate){
     try{
         const res=await axios.post("/api/user/signin",data);
         const name=res.data.name
-        console.log(name);
+        console.log(res.data.id);
         dispatch(login({
             userData:{
                 name:name,
                 email:data.email,
-                id:data.id
+                id:res.data.id
             }
         }))
         console.log("loggin sucern");

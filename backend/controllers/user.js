@@ -54,7 +54,8 @@ async function handleProfile(req,res){
     const data=validateToken(token);
     return res.status(200).json({
         name:data.name,
-        email:data.email
+        email:data.email,
+        id:data._id
     })
     }catch(err){
         return res.status(401).json({error:"Invalid Token"})

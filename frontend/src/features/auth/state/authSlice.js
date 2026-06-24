@@ -10,6 +10,7 @@ const  authSlice=createSlice({
         login:(state,action)=>{
             state.status=true;
             state.userData=action.payload.userData
+            state.id=action.payload.id
         },
         logout:(state)=>{
             state.status=false;

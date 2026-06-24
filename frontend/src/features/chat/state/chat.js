@@ -36,10 +36,17 @@ const chatSlice=createSlice({
              })
              state.chatMeta=chatMeta;
         },
+        addLastMessage:(state,action)=>{
+            state.chatMeta[action.payload.id].lastMessage=action.payload.message
+            state.chatMeta[action.payload.id].lastMessageTime=new Date().toISOString()
+        },
+        addChatMeta:(state,action)=>{
+            state.chatMeta[action.payload.id]=action.payload;
+        },
         addFriend:(state,action)=>{
             const user=action.payload;
             state.friends.byId[user.id]=user;
-            state.freinds.allIds.push(user.id);
+            state.friends.allIds.push(user.id);
         },
         setSelectedUserId:(state,action)=>{
             console.log("triggered")
@@ -54,6 +61,7 @@ const chatSlice=createSlice({
             state.messages=action.payload;
         },
         addMessages:(state,action)=>{
+             console.log('message added '+ action.payload.message );
             state.messages.push(action.payload);
         },
         setRealTimeData:(state,action)=>{
@@ -64,5 +72,5 @@ const chatSlice=createSlice({
         // }
     }
 })
-export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,setRealTimeData}=chatSlice.actions;
+export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,setRealTimeData,addLastMessage,addChatMeta}=chatSlice.actions;
 export default chatSlice.reducer;
