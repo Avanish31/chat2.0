@@ -70,7 +70,8 @@ function initSocket(io, validateToken){
             })
             socket.emit('conversationId',{
                 conversationId:conversationId,
-                message:data.message
+                message:data.message,
+                receiverId:data.receiverId,
             })
             io.to(data.receiverId).emit('receiveMessage',{
                 conversationId:conversationId,

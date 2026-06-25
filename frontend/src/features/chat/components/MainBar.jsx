@@ -70,6 +70,9 @@ function MainBar() {
         dispatch(setMessages(res.data.messages));
       });
     }
+    else{
+      dispatch(setMessages([]));
+    }
   }
   loadMessages();
 

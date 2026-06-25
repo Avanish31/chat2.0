@@ -28,7 +28,7 @@ function App() {
   },[])
   const userData=useSelector((state)=>state.auth.userData);
   const friends=useSelector(state=>state.chat.friends);
-  console.log("selecteduserId "+selectedUserId);
+  
   const realTimeData=useSelector(state=>state.chat.realTimeData);
 
   

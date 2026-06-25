@@ -28,11 +28,10 @@ socket.on('userOffline',async(data)=>{
 })
 
 socket.on('conversationId',async(data)=>{
-    console.log(selectedUserId);
-    if(selectedUserId){
-    const res=await axios.get(`/api/chat/newFriendSend/${selectedUserId}`);
+    if(data.receiverId){
+    const res=await axios.get(`/api/chat/newFriendSend/${data.receiverId}`);
     dispatch(addFriend({
-        id:selectedUserId,
+        id:data.receiverId,
         name:res.data.name,
         email:res.data.email,
         profileImage:res.data.profileImage,
@@ -41,7 +40,7 @@ socket.on('conversationId',async(data)=>{
         conversationId:data.conversationId
     }))
     dispatch(addChatMeta({
-        id:selectedUserId,
+        id:data.receiverId,
         lastMessage:data.message,
         lastMessageTime:new Date().toISOString(),
         unreadCount:null,
@@ -52,20 +51,20 @@ socket.on('conversationId',async(data)=>{
 })
 
 socket.on('receiveMessage',async(data)=>{
-    console.log('message recieved');
+console.log('message recieved');
   const byId=friends.byId;
   const allIds=friends.allIds;
   if(byId[data.senderId]){
     dispatch(addLastMessage({
         lastMessage:message,
-        id:selectedUserId
+        id:data.senderId
     }))
   }
   else{
-    if(selectedUserId){
-    const res=await axios.get(`/api/chat/newFriendReceive/${selectedUserId}`);
+    if(data.senderId){
+    const res=await axios.get(`/api/chat/newFriendReceive/${data.senderId}`);
     dispatch(addFriend({
-        id:selectedUserId,
+        id:data.senderId,
         name:res.data.name,
         email:res.data.email,
         profileImage:res.data.profileImage,
@@ -74,21 +73,24 @@ socket.on('receiveMessage',async(data)=>{
         conversationId:data.conversationId
     }))
     dispatch(addChatMeta({
-        id:selectedUserId,
+        id:data.senderId,
         lastMessage:data.message,
         lastMessageTime:new Date().toISOString(),
         unreadCount:null,
         deletedUntil:null
     }))
-}
+    if(data.senderId==selectedUserId){
+        dispatch(addMessages({
+            conversationId:data.conversationId,
+            senderId:data.senderId,
+            receiverId:data.receiverId,
+            message:data.message,
+            messageType:data.messageType,
+        }))
+    }
+    }
 
-  }
-  dispatch(addMessages({
-    conversationId:data.conversationId,
-    senderId:data.senderId,
-    receiverId:data.receiverId,
-    message:data.message,
-    messageType:data.messageType,
-  }))
+}
+  
 })
 }
