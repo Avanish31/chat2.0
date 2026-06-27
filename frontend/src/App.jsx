@@ -35,7 +35,7 @@ function App() {
   useEffect(()=>{
     if(userData){
       const socket=connectSocket();
-      initSocket(socket,selectedUserId,dispatch,friends);
+      initSocket(socket,dispatch);
     }
     else{
       disconnectSocket()

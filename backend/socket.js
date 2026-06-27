@@ -15,6 +15,7 @@ function initSocket(io, validateToken){
     })
     
     io.on('connection',(socket)=>{
+        console.log(socket.userId+" came online ")
         socket.join(socket.userId)//this creates a room of socket ids for this id
         socket.broadcast.emit('userOnline',{
            userId:socket.userId
@@ -24,7 +25,7 @@ function initSocket(io, validateToken){
             
         })
         socket.on('disconnect',async()=>{
-            
+            console.log(socket.userId+" gone offline ");
             const room=io.sockets.adapter.rooms.get(socket.userId);
             if(!room || room.size===0){
             onlineUsers.delete(socket.userId);

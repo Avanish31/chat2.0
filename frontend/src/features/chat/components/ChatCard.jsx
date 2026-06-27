@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import Notification from './Notification'
 import { useNavigate } from 'react-router-dom'
 import { useSelector,useDispatch } from 'react-redux'
-import { setMessages ,setSelectedUserId,setRealTimeData} from '../state/chat'
+import { setMessages ,setSelectedUserId} from '../state/chat'
 import axios from 'axios'
 function ChatCard({name,profileImage,lastMessage=null,unreadCount=0 ,id}) {
   const navigate=useNavigate();

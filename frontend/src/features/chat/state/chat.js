@@ -9,10 +9,7 @@ const initialState={
     messages:[],
     searchResult:null,
     selectedUserId:null,
-    realTimeData:{
-        status:false,
-        lastseen:null
-    },
+    presence:{}
     // onlineUsers:[]
 }
 const chatSlice=createSlice({
@@ -37,7 +34,7 @@ const chatSlice=createSlice({
              state.chatMeta=chatMeta;
         },
         addLastMessage:(state,action)=>{
-            state.chatMeta[action.payload.id].lastMessage=action.payload.message
+            state.chatMeta[action.payload.id].lastMessage=action.payload.lastMessage
             state.chatMeta[action.payload.id].lastMessageTime=new Date().toISOString()
         },
         addChatMeta:(state,action)=>{
@@ -61,16 +58,18 @@ const chatSlice=createSlice({
             state.messages=action.payload;
         },
         addMessages:(state,action)=>{
-             console.log('message added '+ action.payload.message );
+            console.log('message added '+ action.payload.message );
             state.messages.push(action.payload);
         },
-        setRealTimeData:(state,action)=>{
-            state.realTimeData=action.payload
-        },
+        addPresence:(state,action)=>{
+            console.log("adding Presnece " + action.payload.id);
+            state.presence[action.payload.id]=action.payload;
+            console.log("Reducer state:", state.presence);
+        }
         // setOnlineUsers:(state,action)=>{
         //     state.onlineUsers=action.payload;
         // }
     }
 })
-export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,setRealTimeData,addLastMessage,addChatMeta}=chatSlice.actions;
+export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,addPresence,addLastMessage,addChatMeta}=chatSlice.actions;
 export default chatSlice.reducer;

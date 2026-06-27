@@ -1,30 +1,39 @@
 import { getSocket } from "./socketClient";
 import { useSelector} from "react-redux";
-import { addChatMeta, addFriend, setChatMeta, setRealTimeData ,addMessages} from "../features/chat/state/chat";
+import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage} from "../features/chat/state/chat";
 import axios from "axios";
-export function initSocket(socket,selectedUserId,dispatch,friends){
+import store from '../store'
+let init=false;
+
+export function resetSocketInit() {
+    init = false;
+}
+export function initSocket(socket,dispatch){
+    
 if(!socket){
     return;
 }
+if(init){
+    return;
+}
+console.log("Registering userOnline listener");
+init=true;
 console.log('inisde socket');
 socket.on('userOnline',async(data)=>{
-    if( selectedUserId && data.userId==selectedUserId){
-        console.log(data.userId+" came online")
-        dispatch(setRealTimeData({
+    console.log("user "+ data.userId+" came online");
+        dispatch(addPresence({
+            id:data.userId,
             status:true,
             lastseen:null,
         }))
-    }
 })
 
 socket.on('userOffline',async(data)=>{
-    if(selectedUserId && data.userId==selectedUserId){
-        console.log(data.userId+" went offline");
-        dispatch(setRealTimeData({
+        dispatch(addPresence({
+            id:data.userId,
             status:false,
             lastseen:data.lastseen
         }));
-    }
 })
 
 socket.on('conversationId',async(data)=>{
@@ -51,16 +60,20 @@ socket.on('conversationId',async(data)=>{
 })
 
 socket.on('receiveMessage',async(data)=>{
-console.log('message recieved');
-  const byId=friends.byId;
-  const allIds=friends.allIds;
+    const friends = store.getState().chat.friends;
+    const selectedUserId=store.getState().chat.selectedUserId;
+    const byId=friends.byId;
+    console.log(selectedUserId+ " and "+ data.senderId);
+    console.log(data.senderId, typeof data.senderId);
+console.log(selectedUserId, typeof selectedUserId);
   if(byId[data.senderId]){
     dispatch(addLastMessage({
-        lastMessage:message,
+        lastMessage:data.message,
         id:data.senderId
     }))
   }
   else{
+
     if(data.senderId){
     const res=await axios.get(`/api/chat/newFriendReceive/${data.senderId}`);
     dispatch(addFriend({
@@ -79,7 +92,10 @@ console.log('message recieved');
         unreadCount:null,
         deletedUntil:null
     }))
-    if(data.senderId==selectedUserId){
+}
+  }
+    if(data.senderId===selectedUserId){
+        console.log("firing addMessages");
         dispatch(addMessages({
             conversationId:data.conversationId,
             senderId:data.senderId,
@@ -88,9 +104,7 @@ console.log('message recieved');
             messageType:data.messageType,
         }))
     }
-    }
+    
 
-}
-  
 })
 }

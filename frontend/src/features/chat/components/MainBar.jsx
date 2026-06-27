@@ -9,14 +9,14 @@ import {useSelector} from 'react-redux'
 import { useDispatch } from 'react-redux'
 import axios from 'axios'
 import {fetchData} from '../services/newChatHandle'
-import { setRealTimeData, setSelectedUserId,setMessages } from '../state/chat'
+import { addPresence, setSelectedUserId,setMessages } from '../state/chat'
 function MainBar() {
   const [user,setUser]=useState(null);
   const {id}=useParams();
   const dispatch=useDispatch();
   const friends=useSelector(state=>state.chat.friends);
   console.log(friends);
- 
+  const selectedUserId=useSelector(state=>state.chat.selectedUserId);
   const byId=friends.byId;
   const conversationId=byId[id]?.conversationId;
   console.log(conversationId)
@@ -48,14 +48,16 @@ function MainBar() {
   const loadRealTimeData=async()=>{
     const res=await axios.get(`/api/chat/status/${id}`);
     if(res.data.status){
-      dispatch(setRealTimeData({
+      dispatch(addPresence({
+        id:id,
         status:true,
         lastseen:null
       }))
     }
     else{
       await axios.get(`/api/user/lastseen/${id}`).then((res)=>{
-          dispatch(setRealTimeData({
+          dispatch(addPresence({
+              id:id,
               status:false,
               lastseen:res.data.lastseen
           }))
@@ -79,10 +81,11 @@ function MainBar() {
   
 }, [id,byId]);
 console.log(user?.name);
-const realTimeData=useSelector(state=>state.chat.realTimeData);
-const lastseen=realTimeData.lastseen;
-const status=realTimeData.status;
-
+const presence=useSelector(state=>state.chat.presence);
+const lastseen=presence[id]?.lastseen;
+const status=presence[id]?.status;
+console.log(presence);
+console.log("selected user id "+ selectedUserId)
   return (
     <div className='w-[65%] h-screen text-white bg-[#0B141A] flex flex-col'>
       {(id && user)?(
