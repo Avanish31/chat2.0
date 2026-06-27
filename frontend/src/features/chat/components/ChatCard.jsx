@@ -11,7 +11,8 @@ function ChatCard({name,profileImage,lastMessage=null,unreadCount=0 ,id}) {
 
   // const onlineUsers=useSelector((state)=>state.chat.onlineUsers);
   const handleChatWindow=async()=>{
-    navigate(`/chat/${id}`)
+    navigate(`/chat/${id}`);
+    
   }
   return (
     <>
