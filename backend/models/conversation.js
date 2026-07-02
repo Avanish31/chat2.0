@@ -24,13 +24,38 @@ const conversationSchema=new Schema({
             type:Schema.Types.ObjectId,
             ref:"message"
         },
+        default: {}
     },
     lastMessageTime:{
         type:String
+    },
+    conversationType:{
+        type:String
+    },
+    groupName:{
+        type:String,
+    },
+    groupProfilePhoto:{
+        type:String
+    },
+    groupEmail:{
+        type:String,
     }
+
 },{timestamps:true})
-const Conversation=model('conversation',conversationSchema);
-conversationSchema.pre("save", function(next) {
+conversationSchema.index(
+    { groupEmail: 1 },
+    {
+        unique: true,
+        partialFilterExpression: {
+            groupEmail: {
+                $exists: true,
+                $type: "string"
+            }
+        }
+    }
+);
+conversationSchema.pre("save", async function () {
     if (this.isNew) {
         this.participants.forEach(id => {
             const key = id.toString();
@@ -45,6 +70,7 @@ conversationSchema.pre("save", function(next) {
                 this.lastSeenMessage.set(key, null);
         });
     }
-    next();
 });
+const Conversation=model('conversation',conversationSchema);
+
 module.exports=Conversation;

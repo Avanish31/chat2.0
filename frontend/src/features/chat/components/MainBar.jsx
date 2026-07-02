@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams,useSearchParams } from 'react-router-dom'
 import LastSeen from './LastSeen'
 import Block from './Block'
 import DeleteChat from './DeleteChat'
@@ -9,38 +9,46 @@ import {useSelector} from 'react-redux'
 import { useDispatch } from 'react-redux'
 import axios from 'axios'
 import {fetchData} from '../services/newChatHandle'
-import { addPresence, setSelectedUserId,setMessages } from '../state/chat'
+import { addPresence, setSelectedUserId,setMessages ,setSelectedConversationType,setSelectedConversationId} from '../state/chat'
 function MainBar() {
-  const [user,setUser]=useState(null);
+  const [conv,setConv]=useState(null);
   const {id}=useParams();
+  const [searchParams] = useSearchParams();
+  const type = searchParams.get("type");
   const dispatch=useDispatch();
   const friends=useSelector(state=>state.chat.friends);
-  console.log(friends);
-  const selectedUserId=useSelector(state=>state.chat.selectedUserId);
-  const byId=friends.byId;
-  const conversationId=byId[id]?.conversationId;
-  console.log(conversationId)
- console.log(id);
+  const conversations=useSelector(state=>state.chat.conversations);
+  const conversationId=useSelector(state=>state.chat.selectedConversationId)
+  console.log("yeag "+conversationId)
+  const cbyId=conversations.byId;
+  const fbyId=friends.byId;
  useEffect(() => {
   console.log("inside useffect");
-  if(!id){
-    return;
+  dispatch(setSelectedUserId(id));
+  dispatch(setSelectedConversationType(type));
+  console.log(friends);
+  if(fbyId[id] && type=="dm"){
+    dispatch(setSelectedConversationId(fbyId[id]?.conversationId));
+    setConv({
+      name:fbyId[id].name,
+      profileImage:fbyId[id].profileImage
+    });
+  }
+  else if(cbyId[id] && type=="group"){
+    dispatch(setSelectedConversationId(id));
+    setConv({
+      name:cbyId[id].groupName,
+      profileImage:cbyId[id].groupProfilePhoto
+    });
   }
   else{
-    dispatch(setSelectedUserId(id));
-  }
-  if(byId[id]){
-    
-    setUser(byId[id]);
-  }
-  else{
-    console.log(id);
+  dispatch(setSelectedConversationId(null));
   const loadUser = async () => {
-    if (id) {
+    if (id && type=="dm") {
       console.log("inside loadUser");
       const data = await fetchData(id);
       console.log(data);
-      setUser(data); 
+      setConv(data); 
     }
   };
   loadUser();
@@ -64,44 +72,52 @@ function MainBar() {
       })
     }
   }
+  if(type=="dm"){
   loadRealTimeData();
-  const loadMessages=async()=>{
-     console.log("conversationId "+conversationId);
-    if(conversationId){
-      await axios.get(`/api/chat/getMessages/${conversationId}`).then(async(res)=>{
-        dispatch(setMessages(res.data.messages));
-      });
-    }
-    else{
-      dispatch(setMessages([]));
-    }
   }
-  loadMessages();
-
-  
-}, [id,byId]);
-console.log(user?.name);
+}, [id,friends,conversations,dispatch]);
+console.log(conversationId);
+useEffect(() => {
+    if (conversationId) {
+        axios
+            .get(`/api/chat/getMessages/${conversationId}`)
+            .then(res => {
+                dispatch(setMessages(res.data.messages));
+            });
+    } else {
+        dispatch(setMessages([]));
+    }
+}, [friends,conversations,conversationId]);
 const presence=useSelector(state=>state.chat.presence);
 const lastseen=presence[id]?.lastseen;
 const status=presence[id]?.status;
-console.log(presence);
-console.log("selected user id "+ selectedUserId)
   return (
     <div className='w-[65%] h-screen text-white bg-[#0B141A] flex flex-col'>
-      {(id && user)?(
+      {(conv)?(
         <>
       <div className='w-full h-[10%]  bg-[#161717] border-b border-b-blue-400  flex '>
         <div className=' w-[60%] flex items-center gap-2 '>
-          <img className="w-16 h-16 rounded-full" src={user.profileImage}/>
+          <img className="w-16 h-16 rounded-full" src={conv.profileImage}/>
           <div className='flex flex-col justify-center'>
-            <p>{user.name}</p>
-          {!status&& lastseen?<>{lastseen}</>:null}
+            <p>{conv.name}</p>
+            
+          {type=="dm" && !status&& lastseen?<>{lastseen}</>:null}
           </div>
         </div>
         <div className=' w-[40%] flex items-center justify-evenly  '>
-          <DeleteChat />
-          <Block />
-          {status?<img  className='w-8 h-8 rounded-full' src='/images/online.png'/>:<img  className='w-8 h-8 rounded-full' src='/images/offline.png'/>}
+         {
+            type === "dm" ? (
+              <>
+                {status ? (
+                  <img className="w-8 h-8 rounded-full" src="/images/online.png" />
+                ) : (
+                  <img className="w-8 h-8 rounded-full" src="/images/offline.png" />
+                )}
+                <Block />
+              </>
+            ) : null
+          }
+           <DeleteChat />
         </div>
       </div>
       <ChatWindow />

@@ -5,10 +5,16 @@ const initialState={
     byId:{},
     allIds:[],
     },
+    conversations:{
+        byId:{},
+        allIds:[]
+    },
     chatMeta:{},
     messages:[],
     searchResult:null,
     selectedUserId:null,
+    selectedConversationId:null,
+    selectedConversationType:null,
     presence:{}
     // onlineUsers:[]
 }
@@ -20,11 +26,12 @@ const chatSlice=createSlice({
             const byId={};
             const allIds=[];
             action.payload.forEach(user=>{
-                byId[user.id]=user,
+                byId[user.id]=user
                 allIds.push(user.id);
             })
             state.friends.byId=byId;
             state.friends.allIds=allIds;
+            console.log(JSON.parse(JSON.stringify(state.friends)));
         },
         setChatMeta:(state,action)=>{
              const chatMeta={};
@@ -56,20 +63,43 @@ const chatSlice=createSlice({
         },
         setMessages:(state,action)=>{
             state.messages=action.payload;
+          console.log(state.messages);
+        
         },
         addMessages:(state,action)=>{
-            console.log('message added '+ action.payload.message );
+            console.log("addMessage fired");
             state.messages.push(action.payload);
         },
         addPresence:(state,action)=>{
             console.log("adding Presnece " + action.payload.id);
             state.presence[action.payload.id]=action.payload;
             console.log("Reducer state:", state.presence);
+        },
+        setConversations:(state,action)=>{
+            const byId={};
+            const allIds=[];
+            action.payload.forEach(conversation=>{
+                byId[conversation.id]=conversation
+                allIds.push(conversation.id);
+            })
+            state.conversations.byId=byId;
+            state.conversations.allIds=allIds;
+        },
+        addConversations:(state,action)=>{
+            console.log("addConversation fired");
+            const conversation=action.payload;
+            state.conversations.byId[conversation.id]=conversation;
+            state.conversations.allIds.push(conversation.id);
+            console.log(JSON.parse(JSON.stringify(state.conversations)));
+        },
+        setSelectedConversationId:(state,action)=>{
+            state.selectedConversationId=action.payload;
+            console.log(" selectedConversationId "+ state.selectedConversationId);
+        },
+        setSelectedConversationType:(state,action)=>{
+            state.selectedConversationType=action.payload;
         }
-        // setOnlineUsers:(state,action)=>{
-        //     state.onlineUsers=action.payload;
-        // }
     }
 })
-export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,addPresence,addLastMessage,addChatMeta}=chatSlice.actions;
+export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,addPresence,addLastMessage,addChatMeta,setConversations,addConversations,setSelectedConversationId,setSelectedConversationType}=chatSlice.actions;
 export default chatSlice.reducer;

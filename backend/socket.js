@@ -44,19 +44,20 @@ function initSocket(io, validateToken){
         })
         socket.on('sendMessage',async(data)=>{
             let conversationId=data.conversationId
-            console.log(conversationId);
+            console.log("conversationId "+conversationId);
             if(!data.conversationId){
                 const conversation=await Conversation.create({
                     participants:[data.senderId,data.receiverId],
                     lastMessage:data.message,
-                    lastMessageTime:new Date().toISOString()
+                    lastMessageTime:new Date().toISOString(),
+                    conversationType:data.conversationType
                 })
                 conversationId=conversation._id
             }
             else{
                 await Conversation.findByIdAndUpdate(
                         conversationId,
-                        {
+                        {   
                             lastMessage: data.message,
                             lastMessageTime: new Date().toISOString()
                         }

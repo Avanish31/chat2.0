@@ -11,11 +11,14 @@ function SendMessage() {
   const receiverId=useSelector(state=>state.chat.selectedUserId);
   const friends=useSelector(state=>state.chat.friends);
   const byId=friends.byId;
-  const conversationId=byId[receiverId]?.conversationId;
+  const conversationId=useSelector(state=>state.chat.selectedConversationId);
+  console.log(conversationId);
+  const conversationType=useSelector(state=>state.chat.selectedConversationType);
   const user=useSelector(state=>state.auth.userData);
   const senderId=user?.id;
   const sendMessage=()=>{
     console.log('send button clicked');
+    if(message.length>0){
     dispatch(addMessages({
     conversationId:conversationId,
     senderId:senderId,
@@ -31,13 +34,15 @@ function SendMessage() {
       receiverId:receiverId,
       message:message,
       messageType:"text",
+      conversationType:conversationType
     })
 
     if(conversationId){
       dispatch(addLastMessage({
         lastMessage:message,
-        id:receiverId
+        id:conversationId
       }))
+    }
     }
 
     settextMsg("");

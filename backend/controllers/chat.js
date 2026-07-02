@@ -29,15 +29,31 @@ async function InitialChatLoader(req,res){
                     lastseen:p.lastseen,
                     youBlocked:chat.blocked.get(userId)===true,
                     blockedYou:chat.blocked.get(otherId)===true,
-                    lastMessage:chat.lastMessage,
-                    lastMessageTime:chat.lastMessageTime,
-                    unreadCount:unreadMap[chat._id.toString()]||0,
-                    deletedUntil:chat.deletedUntil?.get(p._id),
                     conversationId:chat._id
                 }
             })
     })
-    res.status(200).json(formatted);
+    const chat2=await Conversation.find({
+        participants:req.user._id
+    }).sort({updatedAt:-1})
+    const conversation=chat2.map(chat=>{
+        return {
+            conversationId:chat._id,
+            participants:chat.participants,
+            lastMessage:chat.lastMessage,
+            lastMessageTime:chat.lastMessageTime,
+            unreadCount:unreadMap[chat._id.toString()]||0,
+            deletedUntil:chat.deletedUntil?.get(userId),
+            conversationType:chat.conversationType,
+            groupName:chat?.groupName,
+            groupProfilePhoto:chat?.groupProfilePhoto,
+            groupEmail:chat?.groupEmail
+        }
+    })
+    res.status(200).json({
+        formatted:formatted,
+        conversation:conversation
+    });
 }
 async function searchHandler(req,res){
     const {email}=req.body;
@@ -60,7 +76,6 @@ async function newChatHandler(req,res){
     res.status(200).json({
         name:user.name,
         profileImage:user.profileImage,
-        lastseen:user.lastseen,
     })
 }
 async function messageHandler(req,res){

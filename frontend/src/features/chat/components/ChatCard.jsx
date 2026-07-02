@@ -5,14 +5,11 @@ import { useNavigate } from 'react-router-dom'
 import { useSelector,useDispatch } from 'react-redux'
 import { setMessages ,setSelectedUserId} from '../state/chat'
 import axios from 'axios'
-function ChatCard({name,profileImage,lastMessage=null,unreadCount=0 ,id}) {
+function ChatCard({name,profileImage,lastMessage=null,unreadCount=0 ,id=null,type}) {
   const navigate=useNavigate();
   const dispatch=useDispatch();
-
-  // const onlineUsers=useSelector((state)=>state.chat.onlineUsers);
   const handleChatWindow=async()=>{
-    navigate(`/chat/${id}`);
-    
+  navigate(`/chat/${id}?type=${type}`);
   }
   return (
     <>

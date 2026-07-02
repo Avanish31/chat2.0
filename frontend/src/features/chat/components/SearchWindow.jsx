@@ -4,27 +4,45 @@ import SearchResultBox from './SearchResultBox';
 import axios from 'axios'
 import { useSelector,useDispatch} from 'react-redux';
 import {setSearchResult} from '../state/chat'
-function SearchWindow({onFocus,email,setEmail}) {
+function SearchWindow({onFocus,query,setQuery}) {
   const friends=useSelector(state=>state.chat.friends);
-  const byIds=friends.byId;
-  const allIds=friends.allIds;
+  const fbyIds=friends.byId;
+  const fallIds=friends.allIds;
+  const conversations=useSelector(state=>state.chat.conversations);
+  const cbyIds=conversations.byId;
+  const callIds=conversations.allIds;
   const chatMeta=useSelector(state=>state.chat.chatMeta);
   const dispatch=useDispatch();
-  const handleSearch=async (email)=>{
-     const foundId=allIds.find(id=>byIds[id].email===email);
-    if(email && foundId){
+  const handleSearch=async (query)=>{
+     const foundFId=fallIds.find(id=>fbyIds[id].email===query);
+     const foundGId=callIds.find(id=>cbyIds[id].groupEmail==query);
+    if(query && (foundFId || foundGId)){
+        if(foundFId){
+        const conversationId=fbyIds[foundFId].conversationId
         dispatch(setSearchResult({
-          name: byIds[foundId].name,
-          profileImage: byIds[foundId].profileImage,
-          lastMessage: chatMeta[foundId]?.lastMessage,
-          unreadCount: chatMeta[foundId]?.unreadCount,
-          id:foundId
+          name: fbyIds[foundFId].name,
+          profileImage: fbyIds[foundFId].profileImage,
+          lastMessage: chatMeta[conversationId]?.lastMessage,
+          unreadCount: chatMeta[conversationId]?.unreadCount,
+          id:foundFId,
+          type:"dm"
         }))
+      }
+      else{
+        dispatch(setSearchResult({
+          name: cbyIds[foundGId].groupName,
+          profileImage: cbyIds[foundGId].groupProfilePhoto,
+          lastMessage: chatMeta[foundGId]?.lastMessage,
+          unreadCount: chatMeta[foundGId]?.unreadCount,
+          id:foundGId,
+          type:"group"
+        }))
+      }
     }
-    else if(email){
+    else if(query){
       try{
       const res=await axios.post('/api/chat/search',{
-            email:email
+            email:query
       });
       const data=res.data;
       
@@ -33,7 +51,8 @@ function SearchWindow({onFocus,email,setEmail}) {
         dispatch(setSearchResult({
           name:data.name,
           profileImage:data.profileImage,
-          id:data.id
+          id:data.id,
+          type:"dm"
         }))
       }
     }catch(err){
@@ -46,13 +65,13 @@ function SearchWindow({onFocus,email,setEmail}) {
     <>
     <form className='w-[65%]  rounded-[10px] h-[30px] text-white bg-gray-600
              border-[5px] border-gray-600
-             focus:border-blue-800 flex' onSubmit={(e) => {e.preventDefault(); handleSearch(email);}}>
+             focus:border-blue-800 flex' onSubmit={(e) => {e.preventDefault(); handleSearch(query);}}>
     
     <input type='text' className='w-[90%] bg-gray-600 outline-none
         focus:outline-none'
         onFocus={onFocus}
-        value={email}
-        onChange={(e)=>setEmail(e.target.value)}
+        value={query}
+        onChange={(e)=>setQuery(e.target.value)}
         
         />
 

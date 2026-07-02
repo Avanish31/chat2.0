@@ -1,6 +1,6 @@
 import { getSocket } from "./socketClient";
 import { useSelector} from "react-redux";
-import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage} from "../features/chat/state/chat";
+import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage, addConversations, setSelectedConversationId} from "../features/chat/state/chat";
 import axios from "axios";
 import store from '../store'
 let init=false;
@@ -37,6 +37,9 @@ socket.on('userOffline',async(data)=>{
 })
 
 socket.on('conversationId',async(data)=>{
+    const user=store.getState().auth.userData;
+    const userId=user.id;
+    dispatch(setSelectedConversationId(data.conversationId));
     if(data.receiverId){
     const res=await axios.get(`/api/chat/newFriendSend/${data.receiverId}`);
     dispatch(addFriend({
@@ -49,12 +52,20 @@ socket.on('conversationId',async(data)=>{
         conversationId:data.conversationId
     }))
     dispatch(addChatMeta({
-        id:data.receiverId,
+        id:data.conversationId,
         lastMessage:data.message,
         lastMessageTime:new Date().toISOString(),
         unreadCount:null,
         deletedUntil:null
     }))
+    dispatch(addConversations({
+        id:data.conversationId,
+        type:"dm",
+        participants:[userId,data.receiverId],
+        groupName:null,
+        groupProfilePhoto:null
+    }))
+
     }
 
 })
@@ -63,13 +74,12 @@ socket.on('receiveMessage',async(data)=>{
     const friends = store.getState().chat.friends;
     const selectedUserId=store.getState().chat.selectedUserId;
     const byId=friends.byId;
-    console.log(selectedUserId+ " and "+ data.senderId);
-    console.log(data.senderId, typeof data.senderId);
-console.log(selectedUserId, typeof selectedUserId);
-  if(byId[data.senderId]){
+    const user=store.getState().auth.userData;
+    const userId=user.id;
+    if(byId[data.senderId]){
     dispatch(addLastMessage({
         lastMessage:data.message,
-        id:data.senderId
+        id:data.conversationId
     }))
   }
   else{
@@ -85,13 +95,21 @@ console.log(selectedUserId, typeof selectedUserId);
         blockedYou: null,
         conversationId:data.conversationId
     }))
+    dispatch(addConversations({
+        id:data.conversationId,
+        type:"dm",
+        participants:[userId,data.senderId],
+        groupName:null,
+        groupProfilePhoto:null
+    }))
     dispatch(addChatMeta({
-        id:data.senderId,
+        id:data.conversationId,
         lastMessage:data.message,
         lastMessageTime:new Date().toISOString(),
         unreadCount:null,
         deletedUntil:null
     }))
+
 }
   }
     if(data.senderId===selectedUserId){
