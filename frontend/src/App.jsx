@@ -6,6 +6,7 @@ import axios from 'axios'
 import {login,logout}  from './features/auth/state/authSlice'
 import { initSocket } from './socket/socketEvent'
 import { connectSocket, disconnectSocket } from './socket/socketClient'
+import { resetSocketInit } from './socket/socketEvent'
 function App() {
   const dispatch=useDispatch()
   const selectedUserId=useSelector((state)=>state.chat.selectedUserId);
@@ -28,17 +29,19 @@ function App() {
   },[])
   const userData=useSelector((state)=>state.auth.userData);
   const friends=useSelector(state=>state.chat.friends);
-  
+  const conversationId=useSelector(state=>state.chat.selectedConversationId);
   const realTimeData=useSelector(state=>state.chat.realTimeData);
-
-  
+  const message=useSelector(state=>state.chat.messages);
+  console.log(message)
+  console.log("conversationId "+conversationId);
   useEffect(()=>{
     if(userData){
       const socket=connectSocket();
       initSocket(socket,dispatch);
     }
     else{
-      disconnectSocket()
+      disconnectSocket();
+      resetSocketInit();
     }
   },[userData])
   

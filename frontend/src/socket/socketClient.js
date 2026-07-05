@@ -6,7 +6,6 @@ export const connectSocket=()=>{
        socket=io("http://localhost:8005",{
         withCredentials: true
        });
-       console.log("socket connected")
     }
     return socket;
     

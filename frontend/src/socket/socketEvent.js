@@ -1,6 +1,6 @@
 import { getSocket } from "./socketClient";
 import { useSelector} from "react-redux";
-import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage, addConversations, setSelectedConversationId} from "../features/chat/state/chat";
+import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage, addConversations, setSelectedConversationId,updateMessageStatus,updateChatMeta} from "../features/chat/state/chat";
 import axios from "axios";
 import store from '../store'
 let init=false;
@@ -19,6 +19,10 @@ if(init){
 console.log("Registering userOnline listener");
 init=true;
 console.log('inisde socket');
+socket.on("connect", () => {
+    console.log("Client socket id:", socket.id);
+});
+
 socket.on('userOnline',async(data)=>{
     console.log("user "+ data.userId+" came online");
         dispatch(addPresence({
@@ -35,15 +39,16 @@ socket.on('userOffline',async(data)=>{
             lastseen:data.lastseen
         }));
 })
-
+console.log("Client socket id:", socket.id);
 socket.on('conversationId',async(data)=>{
+    console.log("convesrationId ");
     const user=store.getState().auth.userData;
     const userId=user.id;
     dispatch(setSelectedConversationId(data.conversationId));
-    if(data.receiverId){
-    const res=await axios.get(`/api/chat/newFriendSend/${data.receiverId}`);
+    if(data.receiverId[0]){
+    const res=await axios.get(`/api/chat/newFriendSend/${data.receiverId[0]}`);
     dispatch(addFriend({
-        id:data.receiverId,
+        id:data.receiverId[0],
         name:res.data.name,
         email:res.data.email,
         profileImage:res.data.profileImage,
@@ -61,7 +66,7 @@ socket.on('conversationId',async(data)=>{
     dispatch(addConversations({
         id:data.conversationId,
         type:"dm",
-        participants:[userId,data.receiverId],
+        participants:[userId,data.receiverId[0]],
         groupName:null,
         groupProfilePhoto:null
     }))
@@ -71,11 +76,13 @@ socket.on('conversationId',async(data)=>{
 })
 
 socket.on('receiveMessage',async(data)=>{
+    console.log("receiveMessage");
     const friends = store.getState().chat.friends;
     const selectedUserId=store.getState().chat.selectedUserId;
     const byId=friends.byId;
     const user=store.getState().auth.userData;
     const userId=user.id;
+    
     if(byId[data.senderId]){
     dispatch(addLastMessage({
         lastMessage:data.message,
@@ -112,17 +119,49 @@ socket.on('receiveMessage',async(data)=>{
 
 }
   }
-    if(data.senderId===selectedUserId){
+   const conversations=store.getState().chat.conversations
+   const participants=conversations.byId[data.conversationId].participants.filter(id=>id!==userId)
+    if(data.senderId===selectedUserId || data.conversationId===selectedUserId){
         console.log("firing addMessages");
         dispatch(addMessages({
             conversationId:data.conversationId,
             senderId:data.senderId,
-            receiverId:data.receiverId,
+            receiverId:[data.receiverId],
             message:data.message,
             messageType:data.messageType,
+            
         }))
+        console.log("messagerRcived");
+        socket.emit('messageReceived',{
+            conversationId:data.conversationId,
+            messageId:data.messageId,
+            participants:participants
+        })
+    }
+    else{
+       dispatch(updateChatMeta(data.conversationId));
     }
     
 
+})
+
+socket.on('messageReceived',async(data)=>{
+    const selectedConversationId=store.getState().chat.selectedConversationId
+    const user=store.getState().auth.userData;
+    const userId=user.id;
+    if(data.conversationId===selectedConversationId){
+        console.log("message Recieved");
+        dispatch(updateMessageStatus(userId));
+    }
+    
+})
+socket.on('openedConv',async(data)=>{
+    const selectedConversationId=store.getState().chat.selectedConversationId;
+    const user=store.getState().auth.userData;
+    const userId=user.id;
+    if(data.conversationId===selectedConversationId){
+        console.log("message Recieved");
+        dispatch(updateMessageStatus(userId));
+    }
 })
 }

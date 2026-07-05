@@ -9,7 +9,8 @@ import {useSelector} from 'react-redux'
 import { useDispatch } from 'react-redux'
 import axios from 'axios'
 import {fetchData} from '../services/newChatHandle'
-import { addPresence, setSelectedUserId,setMessages ,setSelectedConversationType,setSelectedConversationId} from '../state/chat'
+import { addPresence, setSelectedUserId,setMessages ,setSelectedConversationType,setSelectedConversationId,clearUnreadCount} from '../state/chat'
+import { getSocket } from '../../../socket/socketClient'
 function MainBar() {
   const [conv,setConv]=useState(null);
   const {id}=useParams();
@@ -17,8 +18,11 @@ function MainBar() {
   const type = searchParams.get("type");
   const dispatch=useDispatch();
   const friends=useSelector(state=>state.chat.friends);
+  const userData=useSelector((state)=>state.auth.userData);
+  const userId=userData?.id;
   const conversations=useSelector(state=>state.chat.conversations);
   const conversationId=useSelector(state=>state.chat.selectedConversationId)
+  const chatMeta=useSelector(state=>state.chat.chatMeta);
   console.log("yeag "+conversationId)
   const cbyId=conversations.byId;
   const fbyId=friends.byId;
@@ -80,14 +84,37 @@ console.log(conversationId);
 useEffect(() => {
     if (conversationId) {
         axios
-            .get(`/api/chat/getMessages/${conversationId}`)
+            .get(`/api/chat/getMessages/${conversationId}?id=${id}&type=${type}`)
             .then(res => {
                 dispatch(setMessages(res.data.messages));
             });
     } else {
         dispatch(setMessages([]));
     }
+   
 }, [friends,conversations,conversationId]);
+useEffect(() => {
+    if (!conversationId) return;
+
+    if (!chatMeta[conversationId]) return;
+
+    const socket = getSocket();
+    const participants=conversations.byId[conversationId].participants.filter(id=>id!==userId);
+    socket.emit("openedConv", {
+        conversationId,
+        conversationType: type,
+        participants:participants
+    });
+
+    dispatch(clearUnreadCount(conversationId));
+}, [conversationId, chatMeta, type]);
+useEffect(() => {
+    return () => {
+      dispatch(setSelectedConversationId(null));
+      dispatch(setSelectedConversationType(null));
+      dispatch(setSelectedUserId(null));
+    };
+  }, []);
 const presence=useSelector(state=>state.chat.presence);
 const lastseen=presence[id]?.lastseen;
 const status=presence[id]?.status;

@@ -8,27 +8,33 @@ function SendMessage() {
   const[textMsg,settextMsg]=useState("");
   const message=textMsg
   const dispatch=useDispatch();
-  const receiverId=useSelector(state=>state.chat.selectedUserId);
+  const selectedUserId=useSelector(state=>state.chat.selectedUserId);
+  let receiverId=[selectedUserId];
   const friends=useSelector(state=>state.chat.friends);
   const byId=friends.byId;
   const conversationId=useSelector(state=>state.chat.selectedConversationId);
   console.log(conversationId);
+  const conversations=useSelector(state=>state.chat.conversations);
   const conversationType=useSelector(state=>state.chat.selectedConversationType);
   const user=useSelector(state=>state.auth.userData);
   const senderId=user?.id;
   const sendMessage=()=>{
     console.log('send button clicked');
     if(message.length>0){
-    dispatch(addMessages({
-    conversationId:conversationId,
-    senderId:senderId,
-    receiverId:receiverId,
-    message:message,
-    messageType:"text",
-    }))
-    
-    const socket=getSocket();
-    socket.emit('sendMessage',{
+      const socket=getSocket();
+      if(conversations[selectedUserId] && conversationType=="group"){
+        const participants=conversations[selectedUserId].participants;
+        receiverId=participants.filter(id=>id!=senderId);
+      }
+      dispatch(addMessages({
+        conversationId:conversationId,
+        senderId:senderId,
+        receiverId:receiverId,
+        message:message,
+        messageType:"text",
+        status:false
+      }))
+      socket.emit('sendMessage',{
       conversationId:conversationId,
       senderId:senderId,
       receiverId:receiverId,

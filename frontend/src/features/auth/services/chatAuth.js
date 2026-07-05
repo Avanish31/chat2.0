@@ -30,6 +30,7 @@ export async function chatAuth(dispatch,navigate){
         unreadCount:conv.unreadCount,
         deletedUntil:conv.deletedUntil
     }))
+    
     const conversations=conversation.map(conv=>({
         id:conv.conversationId,
         type:conv.conversationType,

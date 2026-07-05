@@ -4,8 +4,7 @@ import RecieveBubble from './RecieveBubble'
 import { useSelector } from 'react-redux';
 import { useEffect, useRef } from "react";
 function ChatWindow() {
-   const messages=useSelector((state)=>state.chat.messages);
-  
+  const messages=useSelector((state)=>state.chat.messages);
   const user=useSelector((state)=>state.auth.userData);
   const messagesEndRef = useRef(null);
   useEffect(() => {
@@ -16,7 +15,7 @@ function ChatWindow() {
   return (
     <div className='h-[80%] overflow-y-auto  text-white border-b border-b-blue-400 w-full no-scrollbar '>
     {messages.map((msg,index)=>{
-      return msg.senderId===user.id?<SendBubble key={index} message={msg.message} messageType={msg.messageType}/>:<RecieveBubble message={msg.message} key={index} messageType={msg.messageType}/>
+      return msg.senderId===user.id?<SendBubble key={index} message={msg.message} messageType={msg.messageType} status={msg?.status}/>:<RecieveBubble message={msg.message} key={index} messageType={msg.messageType} />
     })}
     
     <div ref={messagesEndRef} />

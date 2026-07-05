@@ -14,6 +14,7 @@ async function InitialChatLoader(req,res){
             conversationId:chat._id,
             ...(lastseenId && {_id: {$gt:lastseenId}})
         });
+        console.log(userId+" "+count);
         unreadMap[chat._id.toString()]=count;
     }
     const formatted=chats.flatMap(chat=>{
@@ -50,6 +51,7 @@ async function InitialChatLoader(req,res){
             groupEmail:chat?.groupEmail
         }
     })
+    console.log(unreadMap);
     res.status(200).json({
         formatted:formatted,
         conversation:conversation
@@ -80,7 +82,17 @@ async function newChatHandler(req,res){
 }
 async function messageHandler(req,res){
     const convId=req.params.conversationId
-    const messages=await Message.find({conversationId:convId}).sort({ createdAt: 1 });
+    let messages=await Message.find({conversationId:convId}).sort({ createdAt: 1 });
+    const conversation=await Conversation.findById(convId);
+    const lastSeenMessage=conversation?.lastSeenMessage;
+    const { id, type } = req.query;
+    if(messages.length!=0 && type=="dm"){
+        const lastId=lastSeenMessage.get(id);
+        messages=messages.map((msg)=>({
+            ...msg.toObject(),
+            status: lastId && msg._id.toString() <= lastId.toString()
+        }))
+    }
     res.status(200).json({
         messages:messages
     })

@@ -1,5 +1,6 @@
 import {createSlice} from "@reduxjs/toolkit"
 import { act } from "react";
+
 const initialState={
     friends:{
     byId:{},
@@ -45,9 +46,13 @@ const chatSlice=createSlice({
             state.chatMeta[action.payload.id].lastMessageTime=new Date().toISOString()
         },
         addChatMeta:(state,action)=>{
+            
             state.chatMeta[action.payload.id]=action.payload;
+            console.log("added  chatmeta ");
+            
         },
         addFriend:(state,action)=>{
+            console.log("freind added");
             const user=action.payload;
             state.friends.byId[user.id]=user;
             state.friends.allIds.push(user.id);
@@ -63,12 +68,16 @@ const chatSlice=createSlice({
         },
         setMessages:(state,action)=>{
             state.messages=action.payload;
-          console.log(state.messages);
-        
+            state.messages.forEach(msg=>{
+                console.log(JSON.parse(JSON.stringify(msg)));
+            })
         },
         addMessages:(state,action)=>{
             console.log("addMessage fired");
             state.messages.push(action.payload);
+            state.messages.forEach(msg=>{
+                console.log(JSON.parse(JSON.stringify(msg)));
+            })
         },
         addPresence:(state,action)=>{
             console.log("adding Presnece " + action.payload.id);
@@ -98,8 +107,26 @@ const chatSlice=createSlice({
         },
         setSelectedConversationType:(state,action)=>{
             state.selectedConversationType=action.payload;
+        },
+        updateMessageStatus:(state,action)=>{
+            console.log("status fired");
+            state.messages.forEach((msg)=>{
+                if(msg.senderId==action.payload){
+                    msg.status=true;
+                }
+            })
+        },
+        updateChatMeta:(state,action)=>{
+            
+            state.chatMeta[action.payload].unreadCount=state.chatMeta[action.payload].unreadCount+1;
+        },
+        clearUnreadCount:(state,action)=>{
+            console.log(action.payload);
+            console.log(state.chatMeta[action.payload]);
+            console.log(JSON.parse(JSON.stringify(state.chatMeta)));
+            state.chatMeta[action.payload].unreadCount=0
         }
     }
 })
-export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,addPresence,addLastMessage,addChatMeta,setConversations,addConversations,setSelectedConversationId,setSelectedConversationType}=chatSlice.actions;
+export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,addPresence,addLastMessage,addChatMeta,setConversations,addConversations,setSelectedConversationId,setSelectedConversationType,updateMessageStatus,updateChatMeta,clearUnreadCount}=chatSlice.actions;
 export default chatSlice.reducer;

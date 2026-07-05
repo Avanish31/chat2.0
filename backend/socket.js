@@ -16,7 +16,8 @@ function initSocket(io, validateToken){
     
     io.on('connection',(socket)=>{
         console.log(socket.userId+" came online ")
-        socket.join(socket.userId)//this creates a room of socket ids for this id
+        socket.join(socket.userId)
+        console.log(socket.id);//this creates a room of socket ids for this id
         socket.broadcast.emit('userOnline',{
            userId:socket.userId
         })
@@ -43,46 +44,83 @@ function initSocket(io, validateToken){
         
         })
         socket.on('sendMessage',async(data)=>{
+            console.log(data.message);
             let conversationId=data.conversationId
             console.log("conversationId "+conversationId);
+            console.log("Server socket id:", socket.id);
             if(!data.conversationId){
                 const conversation=await Conversation.create({
-                    participants:[data.senderId,data.receiverId],
+                    participants:[data.senderId,data.receiverId[0]],
                     lastMessage:data.message,
                     lastMessageTime:new Date().toISOString(),
                     conversationType:data.conversationType
                 })
                 conversationId=conversation._id
+                console.log("Emitting conversationId to", socket.id);
+                io.to(socket.userId).emit("conversationId", {
+                    conversationId,
+                    message: data.message,
+                    receiverId: data.receiverId
+                });
             }
             else{
                 await Conversation.findByIdAndUpdate(
                         conversationId,
                         {   
                             lastMessage: data.message,
-                            lastMessageTime: new Date().toISOString()
+                            lastMessageTime: new Date().toISOString(),
                         }
                 );
             }
-            await Message.create({
-                conversationId:conversationId,
-                senderId:data.senderId,
-                receiverId:data.receiverId,
-                message:data.message,
-                messageType:data.messageType
+            const message=await Message.create({
+                    conversationId:conversationId,
+                    senderId:data.senderId,
+                    receiverId:data.receiverId,
+                    message:data.message,
+                    messageType:data.messageType
             })
-            socket.emit('conversationId',{
-                conversationId:conversationId,
-                message:data.message,
-                receiverId:data.receiverId,
-            })
-            io.to(data.receiverId).emit('receiveMessage',{
-                conversationId:conversationId,
-                senderId:data.senderId,
-                receiverId:data.receiverId,
-                message:data.message,
-                messageType:data.messageType
-            })
+           for (const id of data.receiverId) {
+                console.log("frejkfjk");
+                console.log(id);
+                io.to(id).emit('receiveMessage',{
+                    conversationId:conversationId,
+                    senderId:data.senderId,
+                    receiverId:id,
+                    message:data.message,
+                    messageId:message._id,
+                    messageType:data.messageType
+                })
+            }
 
+            // await Conversation.findByIdAndUpdate(
+            //             conversationId,
+            //             {   
+            //                  $set: {
+            //                     [`lastSeenMessage.${socket.userId}`]: message._id
+            //                 }
+            //             }
+            //     );
+            
+            
+
+        })
+        socket.on('messageReceived',async(data)=>{
+            console.log("message Recieved");
+            await Conversation.findByIdAndUpdate(
+                        data.conversationId,
+                        {   
+                             $set: {
+                                [`lastSeenMessage.${socket.userId}`]: data.messageId
+                            }
+                        }
+                );
+                console.log(data.participants);
+                data.participants.forEach((id)=>{
+                    io.to(id).emit('messageReceived',{
+                        conversationId:data.conversationId
+                    })
+                })
+                
         })
         // socket.on('userTyping',(data)=>{
         //     io.to(data.to).emit('userTyping',{
@@ -104,8 +142,31 @@ function initSocket(io, validateToken){
         //         from:socket.userEmail
         //     })
         // })
-        
+        socket.on("openedConv",async(data)=>{
+        console.log(data.conversationId);
+        const conv=await Conversation.findById(data.conversationId);
+        const lastMessage=conv.lastMessage
+        const message=await Message.findOne({conversationId:data.conversationId,message:lastMessage});
+        const lastMessageId=message._id;
+        await Conversation.findByIdAndUpdate(
+            data.conversationId,
+            {
+            $set: {
+                [`lastSeenMessage.${socket.userId}`]:lastMessageId
+            }
+            }
+        )
+        if(data.conversationType==="dm"){
+            console.log(data.participants);
+            data.participants.forEach(id=>{
+            io.to(id).emit('openedConv',{
+                conversationId:data.conversationId,
+            })
+        })
+        }
     })
+    })
+    
 }
 module.exports={
     initSocket,

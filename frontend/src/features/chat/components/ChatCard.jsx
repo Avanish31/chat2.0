@@ -10,7 +10,9 @@ function ChatCard({name,profileImage,lastMessage=null,unreadCount=0 ,id=null,typ
   const dispatch=useDispatch();
   const handleChatWindow=async()=>{
   navigate(`/chat/${id}?type=${type}`);
+  
   }
+  console.log(name+" " +unreadCount);
   return (
     <>
     

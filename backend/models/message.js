@@ -8,10 +8,12 @@ const messageSchema=new Schema({
         type:Schema.Types.ObjectId,
         ref:'user'
     },
-    receiverId:{
-        type:Schema.Types.ObjectId,
-        ref:'user'
-    },
+    receiverId: [
+    {
+        type: Schema.Types.ObjectId,
+        ref: 'user'
+    }
+    ],
     message:{
         type:String,
         required:true
