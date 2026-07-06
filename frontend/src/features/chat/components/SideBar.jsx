@@ -6,6 +6,7 @@ import SearchResultBox from './SearchResultBox';
 import { useSelector } from 'react-redux';
 import { useDispatch } from 'react-redux';
 import { setSearchResult } from '../state/chat';
+import { formatLastMessageTime } from '../services/newChatHandle';
 function SideBar() {
   const [isSearching,setIsSearching]=useState(false);
   const userData=useSelector((state)=>state.auth.userData);
@@ -49,6 +50,9 @@ function SideBar() {
         profileImage:byId[friendsId].profileImage,
         lastMessage:conv.lastMessage,
         unreadCount:conv.unreadCount,
+        lastMessageStatus:conv.lastMessageStatus,
+        lastSenderId:conv.lastSenderId,
+        lastMessageTime:formatLastMessageTime(conv.lastMessageTime),
         id:friendsId,
         type:"dm",
       }
@@ -59,6 +63,9 @@ function SideBar() {
           profileImage:conversation.groupProfilePhoto,
           lastMessage:conv.lastMessage,
           unreadCount:conv.unreadCount,
+          lastMessageStatus:conv.lastMessageStatus,
+          lastSenderId:conv.lastSenderId,
+          lastMessageTime:formatLastMessageTime(conv.lastMessageTime),
           id:conv.id,
           type:"group"
         }
@@ -87,6 +94,9 @@ function SideBar() {
       profileImage={conv.profileImage}
       lastMessage={conv.lastMessage}
       unreadCount={conv.unreadCount}
+      lastMessageStatus={conv.lastMessageStatus}
+      lastSenderId={conv.lastSenderId}
+      lastMessageTime={conv.lastMessageTime}
       type={conv.type}
       id={conv.id}
       key={conv.id}

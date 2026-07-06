@@ -26,12 +26,18 @@ function SendMessage() {
         const participants=conversations[selectedUserId].participants;
         receiverId=participants.filter(id=>id!=senderId);
       }
+      const time = new Date().toLocaleTimeString([], {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      }).toLowerCase();
       dispatch(addMessages({
         conversationId:conversationId,
         senderId:senderId,
         receiverId:receiverId,
         message:message,
         messageType:"text",
+        messageTime:time,
         status:false
       }))
       socket.emit('sendMessage',{
@@ -40,12 +46,16 @@ function SendMessage() {
       receiverId:receiverId,
       message:message,
       messageType:"text",
+      messageTime:time,
       conversationType:conversationType
     })
 
     if(conversationId){
       dispatch(addLastMessage({
         lastMessage:message,
+        lastMessageStatus:false,
+        lastSenderId:senderId,
+        lastMessageTime:new Date().toISOString(),
         id:conversationId
       }))
     }

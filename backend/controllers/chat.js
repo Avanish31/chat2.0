@@ -4,7 +4,8 @@ const User=require('../models/user');
 const {onlineUsers}=require('../socket');
 async function InitialChatLoader(req,res){
     const chats=await Conversation.find({
-        participants:req.user._id
+        participants:req.user._id,
+        conversationType:"dm"
     }).populate("participants","_id name email profileImage lastseen").sort({updatedAt:-1})
     const unreadMap={};
     const userId=req.user._id.toString();
@@ -37,20 +38,37 @@ async function InitialChatLoader(req,res){
     const chat2=await Conversation.find({
         participants:req.user._id
     }).sort({updatedAt:-1})
-    const conversation=chat2.map(chat=>{
-        return {
-            conversationId:chat._id,
-            participants:chat.participants,
-            lastMessage:chat.lastMessage,
-            lastMessageTime:chat.lastMessageTime,
-            unreadCount:unreadMap[chat._id.toString()]||0,
-            deletedUntil:chat.deletedUntil?.get(userId),
-            conversationType:chat.conversationType,
-            groupName:chat?.groupName,
-            groupProfilePhoto:chat?.groupProfilePhoto,
-            groupEmail:chat?.groupEmail
-        }
-    })
+    const conversation= await Promise.all(
+    chat2.map(async (chat) => {
+    const messages = await Message.find({ conversationId: chat._id })
+      .sort({ createdAt: -1 })
+      .limit(1);
+  
+    let lastMessageStatus=false;
+     const lastSenderId=messages[0].senderId;
+    if(chat.conversationType==="dm"){
+        const lastMessageId = messages.length ? messages[0]._id : null;
+        const id=chat.participants.find(id=>id!=userId);
+        const lastId = chat.lastSeenMessage?.get(id);
+        lastMessageStatus=lastId && lastMessageId && lastId.toString() === lastMessageId.toString();
+    }
+  
+    return {
+      conversationId: chat._id,
+      participants: chat.participants,
+      lastMessage: chat.lastMessage,
+      lastMessageTime: chat.lastMessageTime,
+      lastMessageStatus:lastMessageStatus,
+      lastSenderId:lastSenderId,
+      unreadCount: unreadMap[chat._id.toString()] || 0,
+      deletedUntil: chat.deletedUntil?.get(userId),
+      conversationType: chat.conversationType,
+      groupName: chat.groupName,
+      groupProfilePhoto: chat.groupProfilePhoto,
+      groupEmail: chat.groupEmail,
+    };
+  })
+);
     console.log(unreadMap);
     res.status(200).json({
         formatted:formatted,

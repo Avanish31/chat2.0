@@ -77,7 +77,8 @@ function initSocket(io, validateToken){
                     senderId:data.senderId,
                     receiverId:data.receiverId,
                     message:data.message,
-                    messageType:data.messageType
+                    messageType:data.messageType,
+                    messageTime:data.messageTime
             })
            for (const id of data.receiverId) {
                 console.log("frejkfjk");
@@ -88,7 +89,8 @@ function initSocket(io, validateToken){
                     receiverId:id,
                     message:data.message,
                     messageId:message._id,
-                    messageType:data.messageType
+                    messageType:data.messageType,
+                    messageTime:data.messageTime
                 })
             }
 

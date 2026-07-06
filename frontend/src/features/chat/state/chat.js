@@ -44,12 +44,12 @@ const chatSlice=createSlice({
         addLastMessage:(state,action)=>{
             state.chatMeta[action.payload.id].lastMessage=action.payload.lastMessage
             state.chatMeta[action.payload.id].lastMessageTime=new Date().toISOString()
+            state.chatMeta[action.payload.id].lastMessageStatus=action.payload.lastMessageStatus,
+            state.chatMeta[action.payload.id].lastSenderId=action.payload.lastSenderId
         },
         addChatMeta:(state,action)=>{
-            
             state.chatMeta[action.payload.id]=action.payload;
             console.log("added  chatmeta ");
-            
         },
         addFriend:(state,action)=>{
             console.log("freind added");
@@ -111,22 +111,27 @@ const chatSlice=createSlice({
         updateMessageStatus:(state,action)=>{
             console.log("status fired");
             state.messages.forEach((msg)=>{
-                if(msg.senderId==action.payload){
+                if(msg.senderId==action.payload.id){
                     msg.status=true;
                 }
             })
+           
         },
         updateChatMeta:(state,action)=>{
-            
             state.chatMeta[action.payload].unreadCount=state.chatMeta[action.payload].unreadCount+1;
+            console.log("update chat meta "+ state.chatMeta[action.payload].unreadCount);
         },
         clearUnreadCount:(state,action)=>{
             console.log(action.payload);
             console.log(state.chatMeta[action.payload]);
             console.log(JSON.parse(JSON.stringify(state.chatMeta)));
             state.chatMeta[action.payload].unreadCount=0
+        },
+        updateLastMessageStatus:(state,action)=>{
+            console.log("updateLastMessageStatus fired");
+            state.chatMeta[action.payload].lastMessageStatus=true;
         }
     }
 })
-export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,addPresence,addLastMessage,addChatMeta,setConversations,addConversations,setSelectedConversationId,setSelectedConversationType,updateMessageStatus,updateChatMeta,clearUnreadCount}=chatSlice.actions;
+export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,addPresence,addLastMessage,addChatMeta,setConversations,addConversations,setSelectedConversationId,setSelectedConversationType,updateMessageStatus,updateChatMeta,clearUnreadCount,updateLastMessageStatus}=chatSlice.actions;
 export default chatSlice.reducer;

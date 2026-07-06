@@ -28,7 +28,9 @@ export async function chatAuth(dispatch,navigate){
         lastMessage:conv.lastMessage,
         lastMessageTime:conv.lastMessageTime,
         unreadCount:conv.unreadCount,
-        deletedUntil:conv.deletedUntil
+        deletedUntil:conv.deletedUntil,
+        lastMessageStatus:conv.lastMessageStatus,
+        lastSenderId:conv.lastSenderId
     }))
     
     const conversations=conversation.map(conv=>({
@@ -39,6 +41,7 @@ export async function chatAuth(dispatch,navigate){
         groupProfilePhoto:conv.groupProfilePhoto,
         groupEmail:conv.groupEmail
     }))
+    console.log(chatMeta);
     dispatch(setChatMeta(chatMeta));
     dispatch(setConversations(conversations))
     }

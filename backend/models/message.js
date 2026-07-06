@@ -21,6 +21,10 @@ const messageSchema=new Schema({
     messageType:{
         type:String,
         required:true
+    },
+    messageTime:{
+        type:String,
+        require:true
     }
 
 },{timestamps:true})

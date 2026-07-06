@@ -1,6 +1,6 @@
 import { getSocket } from "./socketClient";
 import { useSelector} from "react-redux";
-import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage, addConversations, setSelectedConversationId,updateMessageStatus,updateChatMeta} from "../features/chat/state/chat";
+import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage, addConversations, setSelectedConversationId,updateMessageStatus,updateChatMeta,updateLastMessageStatus} from "../features/chat/state/chat";
 import axios from "axios";
 import store from '../store'
 let init=false;
@@ -60,6 +60,8 @@ socket.on('conversationId',async(data)=>{
         id:data.conversationId,
         lastMessage:data.message,
         lastMessageTime:new Date().toISOString(),
+        lastMessageStatus:false,
+        lastSenderId:userId,
         unreadCount:null,
         deletedUntil:null
     }))
@@ -82,11 +84,15 @@ socket.on('receiveMessage',async(data)=>{
     const byId=friends.byId;
     const user=store.getState().auth.userData;
     const userId=user.id;
-    
-    if(byId[data.senderId]){
+    const conversations=store.getState().chat.conversations
+    const cbyId=conversations.byId;
+    if(byId[data.senderId] || cbyId[data.conversationId]){
     dispatch(addLastMessage({
         lastMessage:data.message,
-        id:data.conversationId
+        id:data.conversationId,
+        lastMessagesStatus:false,
+        lastSenderId:data.senderId,
+        lastMessageTime:new Date().toISOString(),
     }))
   }
   else{
@@ -113,14 +119,16 @@ socket.on('receiveMessage',async(data)=>{
         id:data.conversationId,
         lastMessage:data.message,
         lastMessageTime:new Date().toISOString(),
+        lastMessagesStatus:false,
+        lastSenderId:data.senderId,
         unreadCount:null,
         deletedUntil:null
     }))
 
 }
   }
-   const conversations=store.getState().chat.conversations
-   const participants=conversations.byId[data.conversationId].participants.filter(id=>id!==userId)
+   let conv2=store.getState().chat.conversations;
+   const participants=conv2.byId[data.conversationId].participants.filter(id=>id!==userId)
     if(data.senderId===selectedUserId || data.conversationId===selectedUserId){
         console.log("firing addMessages");
         dispatch(addMessages({
@@ -129,7 +137,7 @@ socket.on('receiveMessage',async(data)=>{
             receiverId:[data.receiverId],
             message:data.message,
             messageType:data.messageType,
-            
+            messageTime:data.messageTime,
         }))
         console.log("messagerRcived");
         socket.emit('messageReceived',{
@@ -151,8 +159,11 @@ socket.on('messageReceived',async(data)=>{
     const userId=user.id;
     if(data.conversationId===selectedConversationId){
         console.log("message Recieved");
-        dispatch(updateMessageStatus(userId));
+        dispatch(updateMessageStatus({
+            id:userId,
+        }));
     }
+    dispatch(updateLastMessageStatus(data.conversationId));
     
 })
 socket.on('openedConv',async(data)=>{
@@ -161,7 +172,10 @@ socket.on('openedConv',async(data)=>{
     const userId=user.id;
     if(data.conversationId===selectedConversationId){
         console.log("message Recieved");
-        dispatch(updateMessageStatus(userId));
+        dispatch(updateMessageStatus({
+            id:userId,
+        }));
     }
+    dispatch(updateLastMessageStatus(data.conversationId));
 })
 }
