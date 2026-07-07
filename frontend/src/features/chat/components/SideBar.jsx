@@ -33,8 +33,9 @@ function SideBar() {
       dispatch(setSearchResult(null));
     }
   },[query])
+  let formatted=[];
   console.log(sortedChatMeta);
-  const formatted=sortedChatMeta.map(conv=>{
+    formatted=sortedChatMeta.map(conv=>{
     let friendsId=null
     let conversation=cbyId[conv.id];
     console.log(conversation);
@@ -71,6 +72,7 @@ function SideBar() {
         }
     }
   })
+
   console.log(formatted);
   return (
     <>

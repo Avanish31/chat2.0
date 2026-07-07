@@ -1,6 +1,6 @@
 import { getSocket } from "./socketClient";
 import { useSelector} from "react-redux";
-import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage, addConversations, setSelectedConversationId,updateMessageStatus,updateChatMeta,updateLastMessageStatus} from "../features/chat/state/chat";
+import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage, addConversations, setSelectedConversationId,updateMessageStatus,updateChatMeta,updateLastMessageStatus,updateMessageId} from "../features/chat/state/chat";
 import axios from "axios";
 import store from '../store'
 let init=false;
@@ -138,6 +138,7 @@ socket.on('receiveMessage',async(data)=>{
             message:data.message,
             messageType:data.messageType,
             messageTime:data.messageTime,
+            _id:data.messageId
         }))
         console.log("messagerRcived");
         socket.emit('messageReceived',{
@@ -178,4 +179,15 @@ socket.on('openedConv',async(data)=>{
     }
     dispatch(updateLastMessageStatus(data.conversationId));
 })
+
+socket.on('messageSaved',(data)=>{
+    const selectedConversationId=store.getState().chat.selectedConversationId;
+    if(data.convId===selectedConversationId){
+        dispatch(updateMessageId({
+            tempId:data.tempId,
+            messageId:data.messageId,
+        }))
+    }
+})
 }
+

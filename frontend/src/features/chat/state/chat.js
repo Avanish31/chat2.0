@@ -130,8 +130,18 @@ const chatSlice=createSlice({
         updateLastMessageStatus:(state,action)=>{
             console.log("updateLastMessageStatus fired");
             state.chatMeta[action.payload].lastMessageStatus=true;
+        },
+        updateMessageId:(state,action)=>{
+            console.log("message saved");
+            const messages=state.messages.find(msg=>msg.tempId==action.payload.tempId);
+            if(messages){
+                messages._id=action.payload.messageId
+            }
+            state.messages.forEach(msg=>{
+                console.log(JSON.parse(JSON.stringify(msg)));
+            })
         }
     }
 })
-export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,addPresence,addLastMessage,addChatMeta,setConversations,addConversations,setSelectedConversationId,setSelectedConversationType,updateMessageStatus,updateChatMeta,clearUnreadCount,updateLastMessageStatus}=chatSlice.actions;
+export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,addPresence,addLastMessage,addChatMeta,setConversations,addConversations,setSelectedConversationId,setSelectedConversationType,updateMessageStatus,updateChatMeta,clearUnreadCount,updateLastMessageStatus,updateMessageId}=chatSlice.actions;
 export default chatSlice.reducer;

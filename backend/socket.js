@@ -53,7 +53,7 @@ function initSocket(io, validateToken){
                     participants:[data.senderId,data.receiverId[0]],
                     lastMessage:data.message,
                     lastMessageTime:new Date().toISOString(),
-                    conversationType:data.conversationType
+                    conversationType:data.conversationType,
                 })
                 conversationId=conversation._id
                 console.log("Emitting conversationId to", socket.id);
@@ -66,12 +66,13 @@ function initSocket(io, validateToken){
             else{
                 await Conversation.findByIdAndUpdate(
                         conversationId,
-                        {   
+                        {
                             lastMessage: data.message,
                             lastMessageTime: new Date().toISOString(),
                         }
                 );
             }
+
             const message=await Message.create({
                     conversationId:conversationId,
                     senderId:data.senderId,
@@ -79,6 +80,19 @@ function initSocket(io, validateToken){
                     message:data.message,
                     messageType:data.messageType,
                     messageTime:data.messageTime
+            })
+            await Conversation.findByIdAndUpdate(
+                        conversationId,
+                        {   
+                             $set: {
+                                [`lastSeenMessage.${socket.userId}`]: message._id
+                            }
+                        }
+            );
+            socket.emit('messageSaved',{
+                tempId:data.tempId,
+                messageId:message._id,
+                convId:conversationId
             })
            for (const id of data.receiverId) {
                 console.log("frejkfjk");
@@ -92,6 +106,7 @@ function initSocket(io, validateToken){
                     messageType:data.messageType,
                     messageTime:data.messageTime
                 })
+                
             }
 
             // await Conversation.findByIdAndUpdate(

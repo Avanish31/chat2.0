@@ -22,6 +22,7 @@ function SendMessage() {
     console.log('send button clicked');
     if(message.length>0){
       const socket=getSocket();
+      const tempId = crypto.randomUUID();
       if(conversations[selectedUserId] && conversationType=="group"){
         const participants=conversations[selectedUserId].participants;
         receiverId=participants.filter(id=>id!=senderId);
@@ -38,7 +39,9 @@ function SendMessage() {
         message:message,
         messageType:"text",
         messageTime:time,
-        status:false
+        status:false,
+        tempId:tempId,
+        messageId:null
       }))
       socket.emit('sendMessage',{
       conversationId:conversationId,
@@ -47,7 +50,8 @@ function SendMessage() {
       message:message,
       messageType:"text",
       messageTime:time,
-      conversationType:conversationType
+      conversationType:conversationType,
+      tempId:tempId
     })
 
     if(conversationId){
