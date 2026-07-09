@@ -16,7 +16,8 @@ const initialState={
     selectedUserId:null,
     selectedConversationId:null,
     selectedConversationType:null,
-    presence:{}
+    presence:{},
+    userTyping:false
     // onlineUsers:[]
 }
 const chatSlice=createSlice({
@@ -140,8 +141,14 @@ const chatSlice=createSlice({
             state.messages.forEach(msg=>{
                 console.log(JSON.parse(JSON.stringify(msg)));
             })
+        },
+        updateUserTyping:(state,action)=>{
+            state.userTyping=action.payload;
+        },
+        updateChatMetaTypingStatus:(state,action)=>{
+            state.chatMeta[action.payload.conversationId].isTyping=action.payload.status;
         }
     }
 })
-export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,addPresence,addLastMessage,addChatMeta,setConversations,addConversations,setSelectedConversationId,setSelectedConversationType,updateMessageStatus,updateChatMeta,clearUnreadCount,updateLastMessageStatus,updateMessageId}=chatSlice.actions;
+export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,addPresence,addLastMessage,addChatMeta,setConversations,addConversations,setSelectedConversationId,setSelectedConversationType,updateMessageStatus,updateChatMeta,clearUnreadCount,updateLastMessageStatus,updateMessageId,updateUserTyping,updateChatMetaTypingStatus}=chatSlice.actions;
 export default chatSlice.reducer;

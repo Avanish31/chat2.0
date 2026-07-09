@@ -5,7 +5,7 @@ function SearchResultBox({searchResult,query}) {
   
   return (
     <div className=' w-full p-2 text-white flex justify-center rounded-[10px] bg-[rgb(61,59,59)] mb-2'>
-      {query?searchResult?<ChatCard name={searchResult.name} profileImage={searchResult.profileImage} id={searchResult.id} lastMessage={searchResult?.lastMessage} unreadCount={searchResult?.unreadCount}  type={searchResult.type}/ >:'No user found':'Search your friend'}
+      {query?searchResult?<ChatCard name={searchResult.name} profileImage={searchResult.profileImage} id={searchResult.id} lastMessage={searchResult?.lastMessage} unreadCount={searchResult?.unreadCount}  type={searchResult.type} isTyping={false}/ >:'No user found':'Search your friend'}
       
     </div>
   )

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import SendFile from './SendFile'
 import { useState } from 'react'
 import { useDispatch ,useSelector} from 'react-redux'
@@ -18,10 +18,10 @@ function SendMessage() {
   const conversationType=useSelector(state=>state.chat.selectedConversationType);
   const user=useSelector(state=>state.auth.userData);
   const senderId=user?.id;
+  const socket=getSocket();
   const sendMessage=()=>{
     console.log('send button clicked');
     if(message.length>0){
-      const socket=getSocket();
       const tempId = crypto.randomUUID();
       if(conversations[selectedUserId] && conversationType=="group"){
         const participants=conversations[selectedUserId].participants;
@@ -67,6 +67,34 @@ function SendMessage() {
 
     settextMsg("");
   }
+  const stopTypingTimer=useRef(null);
+  const isTyping=useRef(false);
+  const handelChange=(e)=>{
+    const value=e.target.value;
+    settextMsg(value);
+    let participants=[selectedUserId];
+    if(conversationId){
+      const cbyId=conversations.byId;
+      participants=cbyId[conversationId].participants.filter(id=>id!==senderId);
+    }
+    if(!isTyping.current){
+      socket.emit('userTyping',{
+        userId:senderId,
+        conversationId:conversationId,
+        participants:participants
+      })
+      isTyping.current=true;
+    }
+    clearTimeout(stopTypingTimer.current);
+    stopTypingTimer.current=setTimeout(()=>{
+      socket.emit('userNotTyping',{
+        userId:senderId,
+        conversationId:conversationId,
+        participants:participants
+      })
+      isTyping.current = false;
+    },1000)
+  }
   return (
     <>
     <div className=' w-full h-[8%] p-2 justify-center items-center  flex mt-4'>
@@ -74,7 +102,7 @@ function SendMessage() {
             <SendFile/>
             <input type='text' className='ml-[4px] rounded-full bg-[#161717] h-[100%] w-[92%] outline-none focus:outline-none focus:ring-0' 
             value={textMsg}
-            onChange={e=>settextMsg(e.target.value)}
+            onChange={handelChange}
             ></input>
             <button type="submit">
               <img className='w-8 h-8 ' src='/images/send.png' onClick={sendMessage}/>

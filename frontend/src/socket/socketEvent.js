@@ -1,6 +1,6 @@
 import { getSocket } from "./socketClient";
 import { useSelector} from "react-redux";
-import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage, addConversations, setSelectedConversationId,updateMessageStatus,updateChatMeta,updateLastMessageStatus,updateMessageId} from "../features/chat/state/chat";
+import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage, addConversations, setSelectedConversationId,updateMessageStatus,updateChatMeta,updateLastMessageStatus,updateMessageId,updateUserTyping,updateChatMetaTypingStatus} from "../features/chat/state/chat";
 import axios from "axios";
 import store from '../store'
 let init=false;
@@ -63,7 +63,8 @@ socket.on('conversationId',async(data)=>{
         lastMessageStatus:false,
         lastSenderId:userId,
         unreadCount:null,
-        deletedUntil:null
+        deletedUntil:null,
+        isTyping:false
     }))
     dispatch(addConversations({
         id:data.conversationId,
@@ -81,6 +82,7 @@ socket.on('receiveMessage',async(data)=>{
     console.log("receiveMessage");
     const friends = store.getState().chat.friends;
     const selectedUserId=store.getState().chat.selectedUserId;
+    const selectedConversationId=store.getState().chat.selectedConversationId
     const byId=friends.byId;
     const user=store.getState().auth.userData;
     const userId=user.id;
@@ -122,14 +124,15 @@ socket.on('receiveMessage',async(data)=>{
         lastMessagesStatus:false,
         lastSenderId:data.senderId,
         unreadCount:null,
-        deletedUntil:null
+        deletedUntil:null,
+        isTyping:false
     }))
 
 }
   }
    let conv2=store.getState().chat.conversations;
    const participants=conv2.byId[data.conversationId].participants.filter(id=>id!==userId)
-    if(data.senderId===selectedUserId || data.conversationId===selectedUserId){
+    if(data.senderId===selectedUserId || data.conversationId===selectedConversationId){
         console.log("firing addMessages");
         dispatch(addMessages({
             conversationId:data.conversationId,
@@ -186,6 +189,38 @@ socket.on('messageSaved',(data)=>{
         dispatch(updateMessageId({
             tempId:data.tempId,
             messageId:data.messageId,
+        }))
+    }
+})
+socket.on('userTyping',async(data)=>{
+    console.log("usertyping.........................")
+    const selectedConversationId=store.getState().chat.selectedConversationId;
+    const selectedUserId=store.getState().chat.selectedUserId;
+    const convesrations=store.getState().chat.conversations;
+    const cbyId=convesrations.byId
+    if(selectedUserId===data.userId || selectedConversationId===data.conversationId){
+            dispatch(updateUserTyping(true));
+    }
+    if(data.conversationId && cbyId[data.conversationId]){
+        dispatch(updateChatMetaTypingStatus({
+            conversationId:data.conversationId,
+            status:true
+        }))
+    }
+})
+socket.on('userNotTyping',async(data)=>{
+    console.log("userNottyping.........................")
+    const selectedConversationId=store.getState().chat.selectedConversationId;
+    const selectedUserId=store.getState().chat.selectedUserId;
+    const convesrations=store.getState().chat.conversations;
+    const cbyId=convesrations.byId
+    if(selectedUserId===data.userId || selectedConversationId===data.conversationId){
+            dispatch(updateUserTyping(false));
+    }
+    if(data.conversationId && cbyId[data.conversationId]){
+        dispatch(updateChatMetaTypingStatus({
+            conversationId:data.conversationId,
+            status:false
         }))
     }
 })

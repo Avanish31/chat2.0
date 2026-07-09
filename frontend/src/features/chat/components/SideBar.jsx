@@ -56,6 +56,7 @@ function SideBar() {
         lastMessageTime:formatLastMessageTime(conv.lastMessageTime),
         id:friendsId,
         type:"dm",
+        isTyping:conv.isTyping
       }
     }
     else if(conversation?.type==="group"){
@@ -68,7 +69,8 @@ function SideBar() {
           lastSenderId:conv.lastSenderId,
           lastMessageTime:formatLastMessageTime(conv.lastMessageTime),
           id:conv.id,
-          type:"group"
+          type:"group",
+          isTyping:conv.isTyping
         }
     }
   })
@@ -102,6 +104,7 @@ function SideBar() {
       type={conv.type}
       id={conv.id}
       key={conv.id}
+      isTyping={conv.isTyping}
       />
     ))}
     </div>

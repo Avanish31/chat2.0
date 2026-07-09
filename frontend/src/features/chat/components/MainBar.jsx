@@ -26,6 +26,7 @@ function MainBar() {
   console.log("yeag "+conversationId)
   const cbyId=conversations.byId;
   const fbyId=friends.byId;
+  const userTyping=useSelector(state=>state.chat.userTyping);
  useEffect(() => {
   console.log("inside useffect");
   dispatch(setSelectedUserId(id));
@@ -128,7 +129,7 @@ const status=presence[id]?.status;
           <div className='flex flex-col justify-center'>
             <p>{conv.name}</p>
             
-          {type=="dm" && !status&& lastseen?<>{lastseen}</>:null}
+          {type=="dm" && userTyping?<p className="text-[#25D366] font-medium">typing...</p>:(<>{!status&& lastseen?<>{lastseen}</>:null}</>)}
           </div>
         </div>
         <div className=' w-[40%] flex items-center justify-evenly  '>

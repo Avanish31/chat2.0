@@ -182,7 +182,31 @@ function initSocket(io, validateToken){
         })
         }
     })
+
+
+    socket.on('userTyping',async(data)=>{
+        console.log(data.participants);
+        data.participants.forEach(id=>{
+        io.to(id).emit('userTyping',{
+            userId:data.userId,
+            conversationId:data.conversationId
+        })
+        })
     })
+
+    socket.on('userNotTyping',async(data)=>{
+        console.log(data.participants);
+        data.participants.forEach(id=>{
+        io.to(id).emit('userNotTyping',{
+            userId:data.userId,
+            conversationId:data.conversationId
+        })
+        })
+    })
+
+    })
+
+   
     
 }
 module.exports={

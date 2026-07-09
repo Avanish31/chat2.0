@@ -30,7 +30,8 @@ export async function chatAuth(dispatch,navigate){
         unreadCount:conv.unreadCount,
         deletedUntil:conv.deletedUntil,
         lastMessageStatus:conv.lastMessageStatus,
-        lastSenderId:conv.lastSenderId
+        lastSenderId:conv.lastSenderId,
+        isTyping:false
     }))
     
     const conversations=conversation.map(conv=>({
