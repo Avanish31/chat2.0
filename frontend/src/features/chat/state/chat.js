@@ -17,7 +17,8 @@ const initialState={
     selectedConversationId:null,
     selectedConversationType:null,
     presence:{},
-    userTyping:false
+    userTyping:false,
+    totalNotification:0
     // onlineUsers:[]
 }
 const chatSlice=createSlice({
@@ -147,8 +148,14 @@ const chatSlice=createSlice({
         },
         updateChatMetaTypingStatus:(state,action)=>{
             state.chatMeta[action.payload.conversationId].isTyping=action.payload.status;
+        },
+        setTotalNotification:(state,action)=>{
+            state.totalNotification=action.payload;
+        },
+        updateTotalNotificationCount:(state,action)=>{
+            state.totalNotification=state.totalNotification+1;
         }
     }
 })
-export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,addPresence,addLastMessage,addChatMeta,setConversations,addConversations,setSelectedConversationId,setSelectedConversationType,updateMessageStatus,updateChatMeta,clearUnreadCount,updateLastMessageStatus,updateMessageId,updateUserTyping,updateChatMetaTypingStatus}=chatSlice.actions;
+export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,addPresence,addLastMessage,addChatMeta,setConversations,addConversations,setSelectedConversationId,setSelectedConversationType,updateMessageStatus,updateChatMeta,clearUnreadCount,updateLastMessageStatus,updateMessageId,updateUserTyping,updateChatMetaTypingStatus,updateTotalNotificationCount,setTotalNotification}=chatSlice.actions;
 export default chatSlice.reducer;

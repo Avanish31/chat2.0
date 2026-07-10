@@ -1,6 +1,6 @@
 import { getSocket } from "./socketClient";
 import { useSelector} from "react-redux";
-import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage, addConversations, setSelectedConversationId,updateMessageStatus,updateChatMeta,updateLastMessageStatus,updateMessageId,updateUserTyping,updateChatMetaTypingStatus} from "../features/chat/state/chat";
+import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage, addConversations, setSelectedConversationId,updateMessageStatus,updateChatMeta,updateLastMessageStatus,updateMessageId,updateUserTyping,updateChatMetaTypingStatus,updateTotalNotificationCount} from "../features/chat/state/chat";
 import axios from "axios";
 import store from '../store'
 let init=false;
@@ -80,6 +80,9 @@ socket.on('conversationId',async(data)=>{
 
 socket.on('receiveMessage',async(data)=>{
     console.log("receiveMessage");
+  
+    const chatActivity = window.location.pathname.startsWith("/chat");
+    if(chatActivity){
     const friends = store.getState().chat.friends;
     const selectedUserId=store.getState().chat.selectedUserId;
     const selectedConversationId=store.getState().chat.selectedConversationId
@@ -127,7 +130,6 @@ socket.on('receiveMessage',async(data)=>{
         deletedUntil:null,
         isTyping:false
     }))
-
 }
   }
    let conv2=store.getState().chat.conversations;
@@ -153,7 +155,10 @@ socket.on('receiveMessage',async(data)=>{
     else{
        dispatch(updateChatMeta(data.conversationId));
     }
-    
+}
+else{
+    dispatch(updateTotalNotificationCount())
+}
 
 })
 
@@ -167,6 +172,7 @@ socket.on('messageReceived',async(data)=>{
             id:userId,
         }));
     }
+    console.log("messageReceived");
     dispatch(updateLastMessageStatus(data.conversationId));
     
 })
@@ -174,13 +180,17 @@ socket.on('openedConv',async(data)=>{
     const selectedConversationId=store.getState().chat.selectedConversationId;
     const user=store.getState().auth.userData;
     const userId=user.id;
+    const chatMeta=store.getState().chat.chatMeta;
     if(data.conversationId===selectedConversationId){
         console.log("message Recieved");
         dispatch(updateMessageStatus({
             id:userId,
         }));
     }
+    console.log("openedConv");
+    if(Object.keys(chatMeta).length !== 0){
     dispatch(updateLastMessageStatus(data.conversationId));
+    }
 })
 
 socket.on('messageSaved',(data)=>{

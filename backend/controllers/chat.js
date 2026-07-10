@@ -131,6 +131,24 @@ async function newFriendHandler(req,res) {
         profileImage:user.profileImage
     })
 }
+async function notificationHandler(req,res){
+    const userId=req.params.id;
+   const chats=await Conversation.find({
+        participants:req.user._id,    
+    })
+    let sum=0;
+    for(const chat of chats){
+        const lastseenId=chat.lastSeenMessage?.get(userId);
+        const count=await Message.countDocuments({
+            conversationId:chat._id,
+            ...(lastseenId && {_id: {$gt:lastseenId}})
+        });
+        sum+=count;
+    }
+    res.status(200).json({
+        notificationCount:sum
+    })
+}
 
 module.exports={
     InitialChatLoader,
@@ -139,4 +157,5 @@ module.exports={
     messageHandler,
     statusHandler,
     newFriendHandler,
+    notificationHandler
 }

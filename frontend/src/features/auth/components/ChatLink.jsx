@@ -10,7 +10,9 @@ function ChatLink() {
   return (
     <>
     <button className='text-white' onClick={chatHandler}>
+
         Chat
+        
     </button>
     </>
   )
