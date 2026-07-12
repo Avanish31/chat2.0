@@ -18,7 +18,11 @@ const initialState={
     selectedConversationType:null,
     presence:{},
     userTyping:false,
-    totalNotification:0
+    totalNotification:0,
+    deleteMode:false,
+    deleteMessageConfirmation:false,
+    selectedMessagesDeletion:[],
+    deleteForEveryOneEnabler:0,
     // onlineUsers:[]
 }
 const chatSlice=createSlice({
@@ -154,8 +158,34 @@ const chatSlice=createSlice({
         },
         updateTotalNotificationCount:(state,action)=>{
             state.totalNotification=state.totalNotification+1;
+        },
+        updateDeleteMode:(state,action)=>{
+            state.deleteMode=action.payload;
+        },
+        updateDeleteMessageConfirmation:(state,action)=>{
+            state.deleteMessageConfirmation=action.payload;
+        },
+        updateSelectedMessagesDeletion:(state,action)=>{
+            state.selectedMessagesDeletion.push(action.payload);
+        },
+        removeSelectedMessagesDeletion:(state,action)=>{
+            state.selectedMessagesDeletion=state.selectedMessagesDeletion.filter(id=>id!==action.payload);
+        },
+        clearSelectedMessagesDeletion:(state,action)=>{
+            state.selectedMessagesDeletion=[];
+        },
+        updateDeleteForEveryOneEnabler:(state,action)=>{
+            state.deleteForEveryOneEnabler=state.deleteForEveryOneEnabler+action.payload;
         }
+       
     }
 })
-export const {setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,addPresence,addLastMessage,addChatMeta,setConversations,addConversations,setSelectedConversationId,setSelectedConversationType,updateMessageStatus,updateChatMeta,clearUnreadCount,updateLastMessageStatus,updateMessageId,updateUserTyping,updateChatMetaTypingStatus,updateTotalNotificationCount,setTotalNotification}=chatSlice.actions;
+export const {
+setFriends,setChatMeta,addFriend,setSelectedUserId,setSearchResult,setMessages,addMessages,addPresence,
+addLastMessage,addChatMeta,setConversations,addConversations,setSelectedConversationId,
+setSelectedConversationType,updateMessageStatus,updateChatMeta,clearUnreadCount,updateLastMessageStatus,
+updateMessageId,updateUserTyping,updateChatMetaTypingStatus,updateTotalNotificationCount,setTotalNotification,
+updateDeleteMode,updateDeleteMessageConfirmation,updateSelectedMessagesDeletion,removeSelectedMessagesDeletion,
+clearSelectedMessagesDeletion,updateDeleteForEveryOneEnabler
+}=chatSlice.actions;
 export default chatSlice.reducer;

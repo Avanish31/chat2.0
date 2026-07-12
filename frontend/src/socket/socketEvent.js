@@ -45,6 +45,10 @@ socket.on('conversationId',async(data)=>{
     const user=store.getState().auth.userData;
     const userId=user.id;
     dispatch(setSelectedConversationId(data.conversationId));
+    let lastMessage=data.message;
+      if(lastMessage.length>20){
+        lastMessage=lastMessage.slice(0,15)+".....";
+      }
     if(data.receiverId[0]){
     const res=await axios.get(`/api/chat/newFriendSend/${data.receiverId[0]}`);
     dispatch(addFriend({
@@ -58,7 +62,7 @@ socket.on('conversationId',async(data)=>{
     }))
     dispatch(addChatMeta({
         id:data.conversationId,
-        lastMessage:data.message,
+        lastMessage:lastMessage,
         lastMessageTime:new Date().toISOString(),
         lastMessageStatus:false,
         lastSenderId:userId,
@@ -91,9 +95,13 @@ socket.on('receiveMessage',async(data)=>{
     const userId=user.id;
     const conversations=store.getState().chat.conversations
     const cbyId=conversations.byId;
+     let lastMessage=data.message;
+      if(lastMessage.length>20){
+        lastMessage=lastMessage.slice(0,15)+".....";
+      }
     if(byId[data.senderId] || cbyId[data.conversationId]){
     dispatch(addLastMessage({
-        lastMessage:data.message,
+        lastMessage:lastMessage,
         id:data.conversationId,
         lastMessagesStatus:false,
         lastSenderId:data.senderId,
@@ -122,7 +130,7 @@ socket.on('receiveMessage',async(data)=>{
     }))
     dispatch(addChatMeta({
         id:data.conversationId,
-        lastMessage:data.message,
+        lastMessage:lastMessage,
         lastMessageTime:new Date().toISOString(),
         lastMessagesStatus:false,
         lastSenderId:data.senderId,

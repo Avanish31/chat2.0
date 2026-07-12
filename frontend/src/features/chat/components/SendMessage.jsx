@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useDispatch ,useSelector} from 'react-redux'
 import { addLastMessage, addMessages } from '../state/chat';
 import { getSocket } from '../../../socket/socketClient';
+import DeleteIcon from '../../../assets/DeleteIcon';
+import { updateDeleteMode,clearSelectedMessagesDeletion,updateDeleteMessageConfirmation} from '../state/chat';
 function SendMessage() {
   const[textMsg,settextMsg]=useState("");
   const message=textMsg
@@ -41,7 +43,6 @@ function SendMessage() {
         messageTime:time,
         status:false,
         tempId:tempId,
-        messageId:null
       }))
       socket.emit('sendMessage',{
       conversationId:conversationId,
@@ -55,8 +56,12 @@ function SendMessage() {
     })
 
     if(conversationId){
+      let lastMessage=message;
+      if(lastMessage.length>20){
+        lastMessage=lastMessage.slice(0,15)+".....";
+      }
       dispatch(addLastMessage({
-        lastMessage:message,
+        lastMessage:lastMessage,
         lastMessageStatus:false,
         lastSenderId:senderId,
         lastMessageTime:new Date().toISOString(),
@@ -95,19 +100,36 @@ function SendMessage() {
       isTyping.current = false;
     },1000)
   }
+  const deleteMode=useSelector(state=>state.chat.deleteMode);
+  const selectedMessages=useSelector(state=>state.chat.selectedMessagesDeletion);
+  const size=selectedMessages.length;
   return (
     <>
     <div className=' w-full h-[8%] p-2 justify-center items-center  flex mt-4'>
-        <form className=' w-[90%] h-10 rounded-full flex bg-[#161717]' onSubmit={(e) => { e.preventDefault(); sendMessage();}}>
+        {deleteMode ?<div className='w-[90%] flex h-10 rounded-full bg-[#161717] justify-between'>
+            <div className='flex items-center'>
+              <button onClick={()=>{dispatch(updateDeleteMode(false)); dispatch(clearSelectedMessagesDeletion())}}>
+              <img className='h-4 w-4 ml-2' src='/images/cross.png '></img>
+              </button>
+              <p className='ml-4'>Selected {size}</p>
+            </div>
+            <div className='flex items-center'>
+                <button onClick={()=>{dispatch(updateDeleteMessageConfirmation(true))}}>
+                <DeleteIcon/>
+                </button>
+            </div>
+        </div>:
+          <form className=' w-[90%] h-10 rounded-full flex bg-[#161717]' onSubmit={(e) => { e.preventDefault(); sendMessage();}}>
             <SendFile/>
-            <input type='text' className='ml-[4px] rounded-full bg-[#161717] h-[100%] w-[92%] outline-none focus:outline-none focus:ring-0' 
+            <input type='text' className='ml-[4px] rounded-md bg-[#161717] h-[100%] w-[92%] outline-none focus:outline-none focus:ring-0  ' 
             value={textMsg}
             onChange={handelChange}
+           
             ></input>
             <button type="submit">
               <img className='w-8 h-8 ' src='/images/send.png' onClick={sendMessage}/>
             </button>
-        </form>
+        </form>  }
     </div>
     </>
   )

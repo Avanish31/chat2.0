@@ -39,6 +39,11 @@ function SideBar() {
     let friendsId=null
     let conversation=cbyId[conv.id];
     console.log(conversation);
+    let lastMessage=conv.lastMessage;
+      if(lastMessage.length>20){
+        lastMessage=lastMessage.slice(0,15)+".....";
+      }
+
     if(conversation?.type==="dm"){
       const participants=conversation.participants;
       console.log(participants);
@@ -49,7 +54,7 @@ function SideBar() {
       return {
         name:byId[friendsId].name,
         profileImage:byId[friendsId].profileImage,
-        lastMessage:conv.lastMessage,
+        lastMessage:lastMessage,
         unreadCount:conv.unreadCount,
         lastMessageStatus:conv.lastMessageStatus,
         lastSenderId:conv.lastSenderId,
@@ -63,7 +68,7 @@ function SideBar() {
         return{
           name:conversation.groupName,
           profileImage:conversation.groupProfilePhoto,
-          lastMessage:conv.lastMessage,
+          lastMessage:lastMessage,
           unreadCount:conv.unreadCount,
           lastMessageStatus:conv.lastMessageStatus,
           lastSenderId:conv.lastSenderId,
@@ -74,7 +79,7 @@ function SideBar() {
         }
     }
   })
-
+  
   console.log(formatted);
   return (
     <>
