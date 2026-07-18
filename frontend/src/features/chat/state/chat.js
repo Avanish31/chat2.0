@@ -51,7 +51,8 @@ const chatSlice=createSlice({
             state.chatMeta[action.payload.id].lastMessage=action.payload.lastMessage
             state.chatMeta[action.payload.id].lastMessageTime=new Date().toISOString()
             state.chatMeta[action.payload.id].lastMessageStatus=action.payload.lastMessageStatus,
-            state.chatMeta[action.payload.id].lastSenderId=action.payload.lastSenderId
+            state.chatMeta[action.payload.id].lastSenderId=action.payload.lastSenderId,
+            state.chatMeta[action.payload.id].lastMessageId=action.payload.lastMessageId;
         },
         addChatMeta:(state,action)=>{
             state.chatMeta[action.payload.id]=action.payload;
@@ -143,6 +144,12 @@ const chatSlice=createSlice({
             if(messages){
                 messages._id=action.payload.messageId
             }
+            for(const [cid,conv] of Object.entries(state.chatMeta)){
+                if(conv.lastMessageId==action.payload.tempId){
+                    state.chatMeta[cid].lastMessageId=action.payload.messageId;
+                    break;
+                }
+            }
             state.messages.forEach(msg=>{
                 console.log(JSON.parse(JSON.stringify(msg)));
             })
@@ -176,6 +183,56 @@ const chatSlice=createSlice({
         },
         updateDeleteForEveryOneEnabler:(state,action)=>{
             state.deleteForEveryOneEnabler=state.deleteForEveryOneEnabler+action.payload;
+        },
+        clearDeleteForEveryOneEnabler:(state,action)=>{
+            state.deleteForEveryOneEnabler=0;
+        },
+        deleteMessageForMe:(state,action)=>{
+            state.selectedMessagesDeletion.forEach((id)=>{
+                state.messages.forEach((msg)=>{
+                    if(msg._id===id){
+                        msg.deleteBy.push(action.payload);
+                       
+                    }
+                })
+            })
+        },
+        deleteMessageForEveryOne:(state,action)=>{
+            action.payload.forEach((id)=>{
+                state.messages.forEach((msg)=>{
+                    if(msg._id===id){
+                        msg.deletedForEveryOne=true;
+                    
+                    }
+                })
+            })
+        },
+        updateLastMessageContent:(state,action)=>{
+            state.chatMeta[action.payload].lastMessage="This message was deleted";
+        },
+        updateLastMessageDeleteForMe:(state,action)=>{
+            let lastMessage=null;
+            let lastMessageId=null;
+            let lastMessageTime=null;
+            let lastMessageStatus=null;
+            let lastSenderId=null;
+            state.messages.forEach((msg)=>{
+                if(!msg.deleteBy.includes(action.payload.userId)){
+                    console.log("yessssssssss");
+                    lastMessage=msg.message;
+                    lastMessageId=msg._id;
+                    lastMessageTime=msg.createdAt;
+                    lastSenderId=msg.senderId;
+                    lastMessageStatus=msg.status;
+                }
+            })
+            state.chatMeta[action.payload.conversationId].lastMessage=lastMessage;
+            state.chatMeta[action.payload.conversationId].lastMessageId=lastMessageId;
+            state.chatMeta[action.payload.conversationId].lastMessageTime=lastMessageTime;
+            state.chatMeta[action.payload.conversationId].lastSenderId=lastSenderId;
+            state.chatMeta[action.payload.conversationId].lastMessageStatus=lastMessageStatus;
+            console.log(lastMessage+" "+lastMessageId+" "+lastMessageTime+" "+lastSenderId+" "+lastMessageStatus);
+            console.log(action.payload.userId+" "+action.payload.conversationId);
         }
        
     }
@@ -186,6 +243,7 @@ addLastMessage,addChatMeta,setConversations,addConversations,setSelectedConversa
 setSelectedConversationType,updateMessageStatus,updateChatMeta,clearUnreadCount,updateLastMessageStatus,
 updateMessageId,updateUserTyping,updateChatMetaTypingStatus,updateTotalNotificationCount,setTotalNotification,
 updateDeleteMode,updateDeleteMessageConfirmation,updateSelectedMessagesDeletion,removeSelectedMessagesDeletion,
-clearSelectedMessagesDeletion,updateDeleteForEveryOneEnabler
+clearSelectedMessagesDeletion,updateDeleteForEveryOneEnabler,deleteMessageForMe,deleteMessageForEveryOne,updateLastMessageContent,
+updateLastMessageDeleteForMe,clearDeleteForEveryOneEnabler
 }=chatSlice.actions;
 export default chatSlice.reducer;

@@ -48,18 +48,27 @@ function initSocket(io, validateToken){
             let conversationId=data.conversationId
             console.log("conversationId "+conversationId);
             console.log("Server socket id:", socket.id);
+            let message=null;
             if(!data.conversationId){
                 const conversation=await Conversation.create({
                     participants:[data.senderId,data.receiverId[0]],
-                    lastMessage:data.message,
                     lastMessageTime:new Date().toISOString(),
                     conversationType:data.conversationType,
                 })
                 conversationId=conversation._id
+                message=await Message.create({
+                    conversationId:conversationId,
+                    senderId:data.senderId,
+                    receiverId:data.receiverId,
+                    message:data.message,
+                    messageType:data.messageType,
+                    messageTime:data.messageTime
+                 })
                 console.log("Emitting conversationId to", socket.id);
                 io.to(socket.userId).emit("conversationId", {
                     conversationId,
                     message: data.message,
+                    messageId:message._id,
                     receiverId: data.receiverId
                 });
             }
@@ -67,13 +76,12 @@ function initSocket(io, validateToken){
                 await Conversation.findByIdAndUpdate(
                         conversationId,
                         {
-                            lastMessage: data.message,
                             lastMessageTime: new Date().toISOString(),
                         }
                 );
             }
-
-            const message=await Message.create({
+            if(!message){
+             message=await Message.create({
                     conversationId:conversationId,
                     senderId:data.senderId,
                     receiverId:data.receiverId,
@@ -81,6 +89,7 @@ function initSocket(io, validateToken){
                     messageType:data.messageType,
                     messageTime:data.messageTime
             })
+            }
             await Conversation.findByIdAndUpdate(
                         conversationId,
                         {   
@@ -161,9 +170,7 @@ function initSocket(io, validateToken){
         // })
         socket.on("openedConv",async(data)=>{
         console.log(data.conversationId);
-        const conv=await Conversation.findById(data.conversationId);
-        const lastMessage=conv.lastMessage
-        const message=await Message.findOne({conversationId:data.conversationId,message:lastMessage});
+        const message=await Message.findOne({conversationId:data.conversationId}).sort({createdAt:-1});
         const lastMessageId=message._id;
         await Conversation.findByIdAndUpdate(
             data.conversationId,
@@ -204,6 +211,23 @@ function initSocket(io, validateToken){
         })
     })
 
+    socket.on('deleteMessageForEveryOne',async(data)=>{
+        console.log("hulean alvarej")
+        console.log("gama sraega "+data.selectedMessagesDeletion)
+        for(const id of data.selectedMessagesDeletion){
+            console.log("yesaaah")
+            await Message.findOneAndUpdate(
+                {_id:id},
+                {$set:{deletedForEveryOne:true}},
+            )
+        }
+        data.participants.forEach(id=>{
+            io.to(id).emit('deleteMessageForEveryOne',{
+                conversationId:data.conversationId,
+                selectedMessagesDeletion:data.selectedMessagesDeletion
+            })
+        })
+    })
     })
 
    

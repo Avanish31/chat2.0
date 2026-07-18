@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateSelectedMessagesDeletion,removeSelectedMessagesDeletion ,updateDeleteForEveryOneEnabler} from '../state/chat';
 function RecieveBubble({message,messageType,time,id}) {
-  const [checked,setChecked]=useState(false);
+  // const [checked,setChecked]=useState(false);
+  const selectedMessagesDeletion=useSelector(state=>state.chat.selectedMessagesDeletion);
+  const checked=selectedMessagesDeletion.includes(id);
   const deleteMode=useSelector(state=>state.chat.deleteMode);
   const dispatch=useDispatch();
   const handleToggle=()=>{
@@ -11,7 +13,7 @@ function RecieveBubble({message,messageType,time,id}) {
       return;
     }
     const newChecked=!checked;
-    setChecked(newChecked);
+    // setChecked(newChecked);
     if(newChecked){
       dispatch(updateSelectedMessagesDeletion(id));
       dispatch(updateDeleteForEveryOneEnabler(1));
@@ -21,11 +23,13 @@ function RecieveBubble({message,messageType,time,id}) {
       dispatch(updateDeleteForEveryOneEnabler(-1));
     }
   }
-  useEffect(() => {
-  if (!deleteMode) {
-    setChecked(false);
-  }
-}, [deleteMode]);
+//   useEffect(() => {
+//   if (!deleteMode) {
+    
+//     setChecked(false);
+    
+//   }
+// }, [deleteMode]);
   return (
     <div   className={`w-full flex justify-between mt-2 mb-2 ml-2 items-center
     ${deleteMode?checked ? "bg-[rgba(61,59,59,0.4)]" : "hover:bg-[rgba(61,59,59,0.4)]":""}

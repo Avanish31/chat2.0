@@ -5,7 +5,7 @@ import { useDispatch ,useSelector} from 'react-redux'
 import { addLastMessage, addMessages } from '../state/chat';
 import { getSocket } from '../../../socket/socketClient';
 import DeleteIcon from '../../../assets/DeleteIcon';
-import { updateDeleteMode,clearSelectedMessagesDeletion,updateDeleteMessageConfirmation} from '../state/chat';
+import { updateDeleteMode,clearSelectedMessagesDeletion,updateDeleteMessageConfirmation,clearDeleteForEveryOneEnabler} from '../state/chat';
 function SendMessage() {
   const[textMsg,settextMsg]=useState("");
   const message=textMsg
@@ -41,8 +41,11 @@ function SendMessage() {
         message:message,
         messageType:"text",
         messageTime:time,
+        createdAt:new Date().toISOString(),
         status:false,
         tempId:tempId,
+        deleteBy:[],
+        deletedForEveryOne:false
       }))
       socket.emit('sendMessage',{
       conversationId:conversationId,
@@ -65,6 +68,7 @@ function SendMessage() {
         lastMessageStatus:false,
         lastSenderId:senderId,
         lastMessageTime:new Date().toISOString(),
+        lastMessageId:tempId,
         id:conversationId
       }))
     }
@@ -108,7 +112,7 @@ function SendMessage() {
     <div className=' w-full h-[8%] p-2 justify-center items-center  flex mt-4'>
         {deleteMode ?<div className='w-[90%] flex h-10 rounded-full bg-[#161717] justify-between'>
             <div className='flex items-center'>
-              <button onClick={()=>{dispatch(updateDeleteMode(false)); dispatch(clearSelectedMessagesDeletion())}}>
+              <button onClick={()=>{dispatch(updateDeleteMode(false)); dispatch(clearSelectedMessagesDeletion()); dispatch(clearDeleteForEveryOneEnabler());}}>
               <img className='h-4 w-4 ml-2' src='/images/cross.png '></img>
               </button>
               <p className='ml-4'>Selected {size}</p>

@@ -2,6 +2,7 @@ const Conversation=require('../models/conversation')
 const Message=require('../models/message')
 const User=require('../models/user');
 const {onlineUsers}=require('../socket');
+const {validateToken}=require('../services/auth');
 async function InitialChatLoader(req,res){
     const chats=await Conversation.find({
         participants:req.user._id,
@@ -45,21 +46,26 @@ async function InitialChatLoader(req,res){
       .limit(1);
   
     let lastMessageStatus=false;
-     const lastSenderId=messages[0].senderId;
+    const lastSenderId=messages[0].senderId;
     if(chat.conversationType==="dm"){
         const lastMessageId = messages.length ? messages[0]._id : null;
         const id=chat.participants.find(id=>id!=userId);
         const lastId = chat.lastSeenMessage?.get(id);
         lastMessageStatus=lastId && lastMessageId && lastId.toString() === lastMessageId.toString();
     }
-  
+    const lastMessage=await Message.findOne({
+        conversationId:chat._id,
+        deleteBy: { $nin: [userId] }
+    }).sort({createdAt:-1});
+    
     return {
       conversationId: chat._id,
       participants: chat.participants,
-      lastMessage: chat.lastMessage,
-      lastMessageTime: chat.lastMessageTime,
-      lastMessageStatus:lastMessageStatus,
-      lastSenderId:lastSenderId,
+      lastMessage:lastMessage?.deletedForEveryOne?"This message was deleted":lastMessage?.message,
+      lastMessageId:lastMessage?._id,
+      lastMessageTime: lastMessage?.createdAt??null,
+      lastMessageStatus:lastMessage?.lastMessageStatus,
+      lastSenderId:lastMessage?.lastSenderId,
       unreadCount: unreadMap[chat._id.toString()] || 0,
       deletedUntil: chat.deletedUntil?.get(userId),
       conversationType: chat.conversationType,
@@ -149,7 +155,26 @@ async function notificationHandler(req,res){
         notificationCount:sum
     })
 }
-
+async function deleteMessageForMeHandler(req,res){
+    const { selectedMessagesDeletion } = req.body;
+     const token=req.cookies?.token;
+    const data=validateToken(token);
+    const userId=data._id
+    console.log(userId);
+     for (const id of selectedMessagesDeletion){
+         console.log("deleteMessageForMeHandler "+id);
+        await Message.findOneAndUpdate(
+            {_id:id},
+            {
+                $push: { deleteBy: userId } 
+            }
+            
+        )
+    }
+    return res.status(200).json({
+        success: true
+    });
+}
 module.exports={
     InitialChatLoader,
     searchHandler,
@@ -157,5 +182,6 @@ module.exports={
     messageHandler,
     statusHandler,
     newFriendHandler,
-    notificationHandler
+    notificationHandler,
+    deleteMessageForMeHandler
 }

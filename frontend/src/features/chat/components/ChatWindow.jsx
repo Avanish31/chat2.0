@@ -15,7 +15,15 @@ function ChatWindow() {
   return (
     <div className='h-[80%] overflow-y-auto  text-white border-b border-b-blue-400 w-full no-scrollbar '>
     {messages.map((msg,index)=>{
-      return msg.senderId===user.id?<SendBubble key={index} message={msg.message} messageType={msg.messageType} status={msg?.status} time={msg.messageTime} id={msg?._id}/>:<RecieveBubble message={msg.message} key={index} messageType={msg.messageType} time={msg.messageTime} id={msg?._id}/>
+        if(msg.deleteBy?.includes(user.id)){
+          return null;
+        }
+        else if(msg.deletedForEveryOne){
+          return msg.senderId===user.id?<SendBubble key={index} message={"This message was deleted"} messageType={msg.messageType} status={msg?.status} time={msg.messageTime} id={msg?._id}  deletedForEveryOne={msg.deletedForEveryOne}/>:<RecieveBubble message={"This message was deleted"} key={index} messageType={msg.messageType} time={msg.messageTime} id={msg?._id}/>
+        }
+        else{
+          return msg.senderId===user.id?<SendBubble key={index} message={msg.message} messageType={msg.messageType} status={msg?.status} time={msg.messageTime} id={msg?._id} deletedForEveryOne={msg.deletedForEveryOne}/>:<RecieveBubble message={msg.message} key={index} messageType={msg.messageType} time={msg.messageTime} id={msg?._id} />
+        }
     })}
     
     <div ref={messagesEndRef} />

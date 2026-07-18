@@ -21,7 +21,7 @@ function ChatCard({name,profileImage,lastMessage=null,unreadCount=0 ,id=null,typ
     <div className='flex flex-col w-[90%]  text-white text-[20px]'>
     <div className='flex '>
     <p className='w-[80%]'>{name}</p>
-    <p>{lastMessageTime}</p>
+    <p>{lastMessageTime!=null && lastMessageTime}</p>
     </div>
     <Notification unreadCount={unreadCount} lastMessageStatus={lastMessageStatus} lastSenderId={lastSenderId} lastMessage={lastMessage} isTyping={isTyping}/>
     </div>

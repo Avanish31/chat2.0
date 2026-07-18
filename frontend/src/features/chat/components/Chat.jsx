@@ -6,11 +6,20 @@ import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { setSelectedUserId } from '../state/chat'
 import { useState } from 'react'
-import { updateDeleteMessageConfirmation,updateDeleteMode,clearSelectedMessagesDeletion } from '../state/chat'
+import { updateDeleteMessageConfirmation,updateDeleteMode,clearSelectedMessagesDeletion,deleteMessageForEveryOne,deleteMessageForMe ,updateLastMessageContent,updateLastMessageDeleteForMe,clearDeleteForEveryOneEnabler} from '../state/chat'
+import axios from 'axios'
+import { getSocket } from '../../../socket/socketClient'
 function Chat() {
   const dispatch=useDispatch();
   const navigate=useNavigate();
-
+  const selectedConversationId=useSelector(state=>state.chat.selectedConversationId);
+  const conversations=useSelector(state=>state.chat.conversations);
+  const userData=useSelector(state=>state.auth.userData);
+  const chatMeta=useSelector(state=>state.chat.chatMeta);
+  const selectedMessagesDeletion=useSelector(state=>state.chat.selectedMessagesDeletion);
+  const userId=userData?.id;
+  const cbyId=conversations.byId;
+  const socket=getSocket();
   useEffect(()=>{
     chatAuth(dispatch,navigate);
     
@@ -20,17 +29,56 @@ function Chat() {
     };
   },[dispatch])
   const deleteMessageConfirmation=useSelector(state=>state.chat.deleteMessageConfirmation);
-  const selectedMessagesDeletion=useSelector(state=>state.chat.selectedMessagesDeletion);
+  
   const deleteForEveryOneEnabler=useSelector(state=>state.chat.deleteForEveryOneEnabler);
+  console.log(deleteForEveryOneEnabler)
   const handleDeleteEveryone=()=>{
+    dispatch(deleteMessageForEveryOne(selectedMessagesDeletion));
+    if(selectedConversationId){
+      const participants=cbyId[selectedConversationId].participants.filter(id=>id!==userId);
+      console.log("hulean alvarej")
+    socket.emit("deleteMessageForEveryOne",{
+      conversationId:selectedConversationId,
+      participants:participants,
+      selectedMessagesDeletion:selectedMessagesDeletion
+    })
+    }
+    selectedMessagesDeletion.forEach(id=>{
+       for(const [cid,conv] of Object.entries(chatMeta)){
+                      if(cid===selectedConversationId && conv.lastMessageId===id){
+                          dispatch(updateLastMessageContent(cid))
+                          break;
+                      }
+        }
+    })
     dispatch(updateDeleteMessageConfirmation(false));
     dispatch(updateDeleteMode(false));
     dispatch(clearSelectedMessagesDeletion());
+    dispatch(clearDeleteForEveryOneEnabler());
   }
-  const handleDeleteForMe=()=>{
+  const handleDeleteForMe=async()=>{
+    dispatch(deleteMessageForMe(userId));
+    await axios.post('/api/chat/deleteMessageForMe',{
+        selectedMessagesDeletion:selectedMessagesDeletion
+    })
+    console.log("deletebyMe");
+    selectedMessagesDeletion.forEach(id=>{
+      
+       for(const [cid,conv] of Object.entries(chatMeta)){
+        console.log(cid+" "+selectedConversationId+" "+ conv.lastMessageId+" "+id);
+                      if(cid===selectedConversationId && conv.lastMessageId===id){
+                          dispatch(updateLastMessageDeleteForMe({
+                            conversationId:cid,
+                            userId:userId
+                          }))
+                          break;
+                      }
+        }
+    })
     dispatch(updateDeleteMessageConfirmation(false));
     dispatch(updateDeleteMode(false));
     dispatch(clearSelectedMessagesDeletion());
+    dispatch(clearDeleteForEveryOneEnabler());
   }
   const handleCancel=()=>{
     dispatch(updateDeleteMessageConfirmation(false));

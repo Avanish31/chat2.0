@@ -40,8 +40,8 @@ function SideBar() {
     let conversation=cbyId[conv.id];
     console.log(conversation);
     let lastMessage=conv.lastMessage;
-      if(lastMessage.length>20){
-        lastMessage=lastMessage.slice(0,15)+".....";
+      if(lastMessage?.length>20){
+        lastMessage=lastMessage?.slice(0,15)+".....";
       }
 
     if(conversation?.type==="dm"){
@@ -58,7 +58,7 @@ function SideBar() {
         unreadCount:conv.unreadCount,
         lastMessageStatus:conv.lastMessageStatus,
         lastSenderId:conv.lastSenderId,
-        lastMessageTime:formatLastMessageTime(conv.lastMessageTime),
+        lastMessageTime:conv.lastMessageTime!=null?formatLastMessageTime(conv.lastMessageTime):conv.lastMessageTime,
         id:friendsId,
         type:"dm",
         isTyping:conv.isTyping

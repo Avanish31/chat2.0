@@ -9,7 +9,7 @@ function Notification({unreadCount,lastMessage,lastSenderId,lastMessageStatus,is
   return (
     <div className='flex text-white items-center'>
       <div className='w-[90%] flex'>
-        {isTyping?<p className="text-[#25D366] font-medium">typing...</p>:(<><div className=' flex items-center mr-[5px]'>{lastSenderId==userId?<>{lastMessageStatus?<BlueTickIcon/>:<WhiteTickIcon/>}</>:null}</div>
+        {isTyping?<p className="text-[#25D366] font-medium">typing...</p>:(<><div className=' flex items-center mr-[5px]'>{lastSenderId==userId?<>{lastMessageStatus==true?<BlueTickIcon/>:<WhiteTickIcon/>}</>:null}</div>
         {lastMessage && <p>{lastMessage}</p>}</>)}
       </div>
       {(unreadCount && unreadCount!=0)?

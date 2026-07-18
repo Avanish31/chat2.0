@@ -1,6 +1,6 @@
 import { getSocket } from "./socketClient";
 import { useSelector} from "react-redux";
-import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage, addConversations, setSelectedConversationId,updateMessageStatus,updateChatMeta,updateLastMessageStatus,updateMessageId,updateUserTyping,updateChatMetaTypingStatus,updateTotalNotificationCount} from "../features/chat/state/chat";
+import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage, addConversations, setSelectedConversationId,updateMessageStatus,updateChatMeta,updateLastMessageStatus,updateMessageId,updateUserTyping,updateChatMetaTypingStatus,updateTotalNotificationCount,deleteMessageForEveryOne,updateLastMessageContent} from "../features/chat/state/chat";
 import axios from "axios";
 import store from '../store'
 let init=false;
@@ -63,6 +63,7 @@ socket.on('conversationId',async(data)=>{
     dispatch(addChatMeta({
         id:data.conversationId,
         lastMessage:lastMessage,
+        lastMessageId:data.messageId,
         lastMessageTime:new Date().toISOString(),
         lastMessageStatus:false,
         lastSenderId:userId,
@@ -100,8 +101,10 @@ socket.on('receiveMessage',async(data)=>{
         lastMessage=lastMessage.slice(0,15)+".....";
       }
     if(byId[data.senderId] || cbyId[data.conversationId]){
+
     dispatch(addLastMessage({
         lastMessage:lastMessage,
+        lastMessageId:data.messageId,
         id:data.conversationId,
         lastMessagesStatus:false,
         lastSenderId:data.senderId,
@@ -132,6 +135,7 @@ socket.on('receiveMessage',async(data)=>{
         id:data.conversationId,
         lastMessage:lastMessage,
         lastMessageTime:new Date().toISOString(),
+        lastMessageId:data.messageId,
         lastMessagesStatus:false,
         lastSenderId:data.senderId,
         unreadCount:null,
@@ -151,7 +155,9 @@ socket.on('receiveMessage',async(data)=>{
             message:data.message,
             messageType:data.messageType,
             messageTime:data.messageTime,
-            _id:data.messageId
+            _id:data.messageId,
+            deleteBy:[],
+            deletedForEveryOne:false
         }))
         console.log("messagerRcived");
         socket.emit('messageReceived',{
@@ -241,6 +247,26 @@ socket.on('userNotTyping',async(data)=>{
             status:false
         }))
     }
+})
+socket.on('deleteMessageForEveryOne',async(data)=>{
+    console.log("game of thrones");
+    const selectedConversationId=store.getState().chat.selectedConversationId;
+    const chatMeta=store.getState().chat.chatMeta;
+    console.log(selectedConversationId+ " "+data.conversationId);
+    if(selectedConversationId==data.conversationId){
+        console.log("jon snow");
+        dispatch(deleteMessageForEveryOne(data.selectedMessagesDeletion));
+    }
+    data.selectedMessagesDeletion.forEach((id)=>{
+        for(const [cid,conv] of Object.entries(chatMeta)){
+                if(cid===data.conversationId && conv.lastMessageId===id){
+                    console.log("wowwwwwww");
+                    dispatch(updateLastMessageContent(cid))
+                    break;
+                }
+        }
+    })
+    
 })
 }
 

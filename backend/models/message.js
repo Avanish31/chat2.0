@@ -25,6 +25,16 @@ const messageSchema=new Schema({
     messageTime:{
         type:String,
         require:true
+    },
+    deleteBy:[
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'user'
+        }
+    ],
+    deletedForEveryOne:{
+        type:Boolean,
+        default:false
     }
 
 },{timestamps:true})

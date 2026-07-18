@@ -4,10 +4,6 @@ const conversationSchema=new Schema({
         type:Schema.Types.ObjectId,
         ref:'user'
     }],
-    lastMessage:{
-        type:String,
-        required:true
-    },
     blocked:{
         type:Map,
         of:Boolean,

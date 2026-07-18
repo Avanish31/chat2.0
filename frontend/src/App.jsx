@@ -44,7 +44,8 @@ function App() {
       resetSocketInit();
     }
   },[userData])
-  
+  const deleteForEveryOneEnabler=useSelector(state=>state.chat.deleteForEveryOneEnabler);
+  console.log(deleteForEveryOneEnabler)
   return (
     <>
       <div className='bg-cover bg-center bg-fixed min-h-screen' style={{backgroundImage:"url('/images/backimage.jpg')"}}>

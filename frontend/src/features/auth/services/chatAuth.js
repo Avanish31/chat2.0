@@ -26,6 +26,7 @@ export async function chatAuth(dispatch,navigate){
     const chatMeta=conversation.map(conv=>({
         id:conv.conversationId,
         lastMessage:conv.lastMessage,
+        lastMessageId:conv.lastMessageId,
         lastMessageTime:conv.lastMessageTime,
         unreadCount:conv.unreadCount,
         deletedUntil:conv.deletedUntil,

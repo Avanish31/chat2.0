@@ -3,29 +3,39 @@ import BlueTickIcon from '../../../assets/bluetick'
 import WhiteTickIcon from '../../../assets/whitetick'
 import { useState ,useEffect} from 'react';
 import { useSelector ,useDispatch} from 'react-redux';
-import { updateSelectedMessagesDeletion,removeSelectedMessagesDeletion } from '../state/chat';
-function SendBubble({message,messageType,status,time, id}) {
-  const [checked,setChecked]=useState(false);
-   const deleteMode=useSelector(state=>state.chat.deleteMode);
+import { updateSelectedMessagesDeletion,removeSelectedMessagesDeletion,updateDeleteForEveryOneEnabler } from '../state/chat';
+function SendBubble({message,messageType,status,time, id,deletedForEveryOne}) {
+  // const [checked,setChecked]=useState(false);
+  const selectedMessagesDeletion=useSelector(state=>state.chat.selectedMessagesDeletion);
+  const checked=selectedMessagesDeletion.includes(id);
+ const deleteMode=useSelector(state=>state.chat.deleteMode);
   const dispatch=useDispatch();
   const handleToggle=()=>{
     if(!deleteMode){
       return;
     }
     const newChecked=!checked;
-    setChecked(newChecked);
+    // setChecked(newChecked);
     if(newChecked){
        dispatch(updateSelectedMessagesDeletion(id));
+       if(deletedForEveryOne){
+        dispatch(updateDeleteForEveryOneEnabler(1));
+       }
     }
     else{
       dispatch(removeSelectedMessagesDeletion(id));
+      if(deletedForEveryOne){
+        dispatch(updateDeleteForEveryOneEnabler(-1));
+       }
     }
   }
-  useEffect(() => {
-  if (!deleteMode) {
-    setChecked(false);
-  }
-}, [deleteMode]);
+//   useEffect(() => {
+//   if (!deleteMode) {
+//     checked=false;
+//     // setChecked(false);
+    
+//   }
+// }, [deleteMode]);
   return (
     <div
   className={`w-full flex flex-row-reverse justify-between mb-2 mt-2 items-center ${
