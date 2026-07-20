@@ -4,11 +4,24 @@ const conversationSchema=new Schema({
         type:Schema.Types.ObjectId,
         ref:'user'
     }],
-    blocked:{
-        type:Map,
-        of:Boolean,
-        default:{}
-    },
+    blocked:[{
+        blockedBy:{
+            type:Schema.Types.ObjectId,
+            ref:'user'
+        },
+        blockedUser:{
+            type:Schema.Types.ObjectId,
+            ref:'user'
+        },
+        blockedAt:{
+            type:Date,
+            default:Date.now
+        },
+        unblockedAt:{
+            type:Date,
+            default:null
+        }
+    }],
     deletedUntil: {
         type: Map,
         of: Date,
@@ -55,9 +68,6 @@ conversationSchema.pre("save", async function () {
     if (this.isNew) {
         this.participants.forEach(id => {
             const key = id.toString();
-
-            if (!this.blocked.has(key))
-                this.blocked.set(key, false);
 
             if (!this.deletedUntil.has(key))
                 this.deletedUntil.set(key, null);

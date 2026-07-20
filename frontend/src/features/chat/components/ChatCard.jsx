@@ -8,16 +8,22 @@ import axios from 'axios'
 function ChatCard({name,profileImage,lastMessage=null,unreadCount=0 ,id=null,type,lastMessageStatus=null,lastSenderId=null,lastMessageTime=null,isTyping=false}) {
   const navigate=useNavigate();
   const dispatch=useDispatch();
+  const friends=useSelector(state=>state.chat.friends);
+
   const handleChatWindow=async()=>{
   navigate(`/chat/${id}?type=${type}`);
   
   }
   console.log(name+" " +unreadCount);
+  let blocked=false;
+  if(type=="dm"){
+    blocked=friends?.byId[id]?.blockedYou??false
+  }
   return (
     <>
     
     <div className=' w-full flex items-center gap-4 hover:bg-[rgb(61,59,59)] mb-4' onClick={()=>handleChatWindow()}>
-    <img className="w-20 h-20 rounded-full" src={profileImage}/>
+    {blocked?<img className="w-20 h-20 rounded-full" src='/images/blockedProfilePhoto.png'/>:<img className="w-20 h-20 rounded-full" src={profileImage}/>}
     <div className='flex flex-col w-[90%]  text-white text-[20px]'>
     <div className='flex '>
     <p className='w-[80%]'>{name}</p>

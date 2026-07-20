@@ -62,7 +62,8 @@ function initSocket(io, validateToken){
                     receiverId:data.receiverId,
                     message:data.message,
                     messageType:data.messageType,
-                    messageTime:data.messageTime
+                    messageTime:data.messageTime,
+                    dummy:data.dummy
                  })
                 console.log("Emitting conversationId to", socket.id);
                 io.to(socket.userId).emit("conversationId", {
@@ -73,12 +74,14 @@ function initSocket(io, validateToken){
                 });
             }
             else{
+                if(!data.dummy){
                 await Conversation.findByIdAndUpdate(
                         conversationId,
                         {
                             lastMessageTime: new Date().toISOString(),
                         }
                 );
+            }
             }
             if(!message){
              message=await Message.create({
@@ -87,9 +90,11 @@ function initSocket(io, validateToken){
                     receiverId:data.receiverId,
                     message:data.message,
                     messageType:data.messageType,
-                    messageTime:data.messageTime
+                    messageTime:data.messageTime,
+                    dummy:data.dummy
             })
             }
+            if(!data.dummy){
             await Conversation.findByIdAndUpdate(
                         conversationId,
                         {   
@@ -98,24 +103,28 @@ function initSocket(io, validateToken){
                             }
                         }
             );
+            }
             socket.emit('messageSaved',{
                 tempId:data.tempId,
                 messageId:message._id,
                 convId:conversationId
             })
-           for (const id of data.receiverId) {
-                console.log("frejkfjk");
-                console.log(id);
-                io.to(id).emit('receiveMessage',{
-                    conversationId:conversationId,
-                    senderId:data.senderId,
-                    receiverId:id,
-                    message:data.message,
-                    messageId:message._id,
-                    messageType:data.messageType,
-                    messageTime:data.messageTime
-                })
-                
+            if(!data.blocked){
+                console.log("blocked status "+data.blocked);
+                for (const id of data.receiverId) {
+                        console.log("frejkfjk");
+                        console.log(id);
+                        io.to(id).emit('receiveMessage',{
+                            conversationId:conversationId,
+                            senderId:data.senderId,
+                            receiverId:id,
+                            message:data.message,
+                            messageId:message._id,
+                            messageType:data.messageType,
+                            messageTime:data.messageTime
+                        })
+                        
+                    }
             }
 
             // await Conversation.findByIdAndUpdate(
@@ -141,9 +150,12 @@ function initSocket(io, validateToken){
                         }
                 );
                 console.log(data.participants);
+                const conversation=await Conversation.findById(data.conversationId);
                 data.participants.forEach((id)=>{
+                    const intervals=conversation.blocked.filter(b=>b.blockedBy.equals(socket.userId) && b.blockedUser.equals(id));
                     io.to(id).emit('messageReceived',{
-                        conversationId:data.conversationId
+                        conversationId:data.conversationId,
+                        intervals:intervals
                     })
                 })
                 
@@ -169,9 +181,11 @@ function initSocket(io, validateToken){
         //     })
         // })
         socket.on("openedConv",async(data)=>{
-        console.log(data.conversationId);
+        
+        console.log(data.conversationId+" openedconv");
         const message=await Message.findOne({conversationId:data.conversationId}).sort({createdAt:-1});
         const lastMessageId=message._id;
+        const conversation=await Conversation.findById(data.conversationId);
         await Conversation.findByIdAndUpdate(
             data.conversationId,
             {
@@ -183,8 +197,13 @@ function initSocket(io, validateToken){
         if(data.conversationType==="dm"){
             console.log(data.participants);
             data.participants.forEach(id=>{
+            const intervals=conversation.blocked.filter(b=>b.blockedBy.equals(socket.userId) && b.blockedUser.equals(id));
+            intervals.forEach(itn=>{
+                console.log("gojo "+itn);
+            })
             io.to(id).emit('openedConv',{
                 conversationId:data.conversationId,
+                intervals:intervals
             })
         })
         }
@@ -227,6 +246,45 @@ function initSocket(io, validateToken){
                 selectedMessagesDeletion:data.selectedMessagesDeletion
             })
         })
+    })
+    socket.on('blocked',async(data)=>{
+        io.to(data.blockedId).emit('blocked',{
+            userId:socket.userId
+        })
+        await Conversation.findByIdAndUpdate(
+            data.conversationId,
+            {
+                $push:{
+                    blocked:{
+                        blockedBy:socket.userId,
+                        blockedUser:data.blockedId
+                    }
+                }
+            }
+        )
+    })
+    socket.on('unblocked',async(data)=>{
+        console.log("unblockeddddd");
+        io.to(data.blockedId).emit('unblocked',{
+            userId:socket.userId
+        })
+        await Conversation.updateOne(
+            {
+            _id:data.conversationId,
+            blocked:{
+                $elemMatch:{
+                    blockedBy:socket.userId,
+                    blockedUser:data.blockedId,
+                    unblockedAt:null
+                }
+            }
+            },
+            {
+                $set:{
+                    "blocked.$.unblockedAt": new Date()
+                }
+            }
+        )
     })
     })
 

@@ -119,7 +119,21 @@ const chatSlice=createSlice({
             console.log("status fired");
             state.messages.forEach((msg)=>{
                 if(msg.senderId==action.payload.id){
-                    msg.status=true;
+                    let blocked=false;
+                     for(const interval of action.payload.intervals){
+                        const end=interval.unblockedAt??new Date(8640000000000000);
+                        console.log(interval.blockedAt+" "+end+" "+new Date(msg.createdAt));
+
+                        if(msg.createdAt>=interval.blockedAt && msg.createdAt<=end){
+                            console.log("bockeeeeeed");
+                          blocked=true;
+                          break;
+                        }
+                    }
+                    if(!blocked){
+                        msg.status=true;
+                    }
+                    
                 }
             })
            
@@ -136,7 +150,23 @@ const chatSlice=createSlice({
         },
         updateLastMessageStatus:(state,action)=>{
             console.log("updateLastMessageStatus fired");
-            state.chatMeta[action.payload].lastMessageStatus=true;
+            let blocked=false;
+            const lastMessageTime=state.chatMeta[action.payload.conversationId].lastMessageTime;
+            for(const interval of action.payload.intervals){
+                const end=interval.unblockedAt??new Date(8640000000000000);
+                    if(lastMessageTime>=interval.blockedAt && lastMessageTime<=end){
+                          blocked=true;
+                          break;
+                    }
+                }
+                if(!blocked){
+                    state.chatMeta[action.payload.conversationId].lastMessageStatus=true;
+                }
+                else{
+                     state.chatMeta[action.payload.conversationId].lastMessageStatus=false;
+                }
+            
+            
         },
         updateMessageId:(state,action)=>{
             console.log("message saved");
@@ -233,7 +263,18 @@ const chatSlice=createSlice({
             state.chatMeta[action.payload.conversationId].lastMessageStatus=lastMessageStatus;
             console.log(lastMessage+" "+lastMessageId+" "+lastMessageTime+" "+lastSenderId+" "+lastMessageStatus);
             console.log(action.payload.userId+" "+action.payload.conversationId);
+        },
+        updateYouBlockstatus:(state,action)=>{
+            state.friends.byId[action.payload.id].youBlocked=action.payload.status;
+        },
+        updateBlockedYoustatus:(state,action)=>{
+            console.log("unblockeed");
+            console.log(action.payload.status+" "+action.payload.id);
+            state.friends.byId[action.payload.id].blockedYou=action.payload.status;
+            console.log(JSON.parse(JSON.stringify(state.friends)));
         }
+        
+
        
     }
 })
@@ -244,6 +285,6 @@ setSelectedConversationType,updateMessageStatus,updateChatMeta,clearUnreadCount,
 updateMessageId,updateUserTyping,updateChatMetaTypingStatus,updateTotalNotificationCount,setTotalNotification,
 updateDeleteMode,updateDeleteMessageConfirmation,updateSelectedMessagesDeletion,removeSelectedMessagesDeletion,
 clearSelectedMessagesDeletion,updateDeleteForEveryOneEnabler,deleteMessageForMe,deleteMessageForEveryOne,updateLastMessageContent,
-updateLastMessageDeleteForMe,clearDeleteForEveryOneEnabler
+updateLastMessageDeleteForMe,clearDeleteForEveryOneEnabler,updateYouBlockstatus,updateBlockedYoustatus
 }=chatSlice.actions;
 export default chatSlice.reducer;

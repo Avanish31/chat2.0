@@ -1,6 +1,6 @@
 import { getSocket } from "./socketClient";
 import { useSelector} from "react-redux";
-import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage, addConversations, setSelectedConversationId,updateMessageStatus,updateChatMeta,updateLastMessageStatus,updateMessageId,updateUserTyping,updateChatMetaTypingStatus,updateTotalNotificationCount,deleteMessageForEveryOne,updateLastMessageContent} from "../features/chat/state/chat";
+import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage, addConversations, setSelectedConversationId,updateMessageStatus,updateChatMeta,updateLastMessageStatus,updateMessageId,updateUserTyping,updateChatMetaTypingStatus,updateTotalNotificationCount,deleteMessageForEveryOne,updateLastMessageContent,updateBlockedYoustatus} from "../features/chat/state/chat";
 import axios from "axios";
 import store from '../store'
 let init=false;
@@ -56,8 +56,8 @@ socket.on('conversationId',async(data)=>{
         name:res.data.name,
         email:res.data.email,
         profileImage:res.data.profileImage,
-        youBlocked: null,
-        blockedYou: null,
+        youBlocked: false,
+        blockedYou: false,
         conversationId:data.conversationId
     }))
     dispatch(addChatMeta({
@@ -90,7 +90,8 @@ socket.on('receiveMessage',async(data)=>{
     if(chatActivity){
     const friends = store.getState().chat.friends;
     const selectedUserId=store.getState().chat.selectedUserId;
-    const selectedConversationId=store.getState().chat.selectedConversationId
+    const selectedConversationId=store.getState().chat.selectedConversationId;
+    const selectedConversationType=store.getState().chat.selectedConversationType;
     const byId=friends.byId;
     const user=store.getState().auth.userData;
     const userId=user.id;
@@ -120,8 +121,8 @@ socket.on('receiveMessage',async(data)=>{
         name:res.data.name,
         email:res.data.email,
         profileImage:res.data.profileImage,
-        youBlocked: null,
-        blockedYou: null,
+        youBlocked: false,
+        blockedYou: false,
         conversationId:data.conversationId
     }))
     dispatch(addConversations({
@@ -160,11 +161,15 @@ socket.on('receiveMessage',async(data)=>{
             deletedForEveryOne:false
         }))
         console.log("messagerRcived");
+        const blocked=friends?.byId[selectedUserId]?.youBlocked ?? false;
+        console.log("this user "+friends?.byId[selectedUserId]?.name+" is blocked "+blocked);
+        if(!blocked){
         socket.emit('messageReceived',{
             conversationId:data.conversationId,
             messageId:data.messageId,
             participants:participants
         })
+        }
     }
     else{
        dispatch(updateChatMeta(data.conversationId));
@@ -184,10 +189,14 @@ socket.on('messageReceived',async(data)=>{
         console.log("message Recieved");
         dispatch(updateMessageStatus({
             id:userId,
+            intervals:data.intervals
         }));
     }
     console.log("messageReceived");
-    dispatch(updateLastMessageStatus(data.conversationId));
+   dispatch(updateLastMessageStatus({
+        conversationId:data.conversationId,
+        intervals:data.intervals
+    }));
     
 })
 socket.on('openedConv',async(data)=>{
@@ -199,11 +208,15 @@ socket.on('openedConv',async(data)=>{
         console.log("message Recieved");
         dispatch(updateMessageStatus({
             id:userId,
+            intervals:data.intervals
         }));
     }
     console.log("openedConv");
     if(Object.keys(chatMeta).length !== 0){
-    dispatch(updateLastMessageStatus(data.conversationId));
+    dispatch(updateLastMessageStatus({
+        conversationId:data.conversationId,
+        intervals:data.intervals
+    }));
     }
 })
 
@@ -267,6 +280,19 @@ socket.on('deleteMessageForEveryOne',async(data)=>{
         }
     })
     
+})
+socket.on('blocked',async(data)=>{
+    dispatch(updateBlockedYoustatus({
+        id:data.userId,
+        status:true
+    }))
+})
+socket.on('unblocked',async(data)=>{
+    console.log("voldemort");
+    dispatch(updateBlockedYoustatus({
+        id:data.userId,
+        status:false
+    }))
 })
 }
 

@@ -3,6 +3,7 @@ import SendBubble from './SendBubble'
 import RecieveBubble from './RecieveBubble'
 import { useSelector } from 'react-redux';
 import { useEffect, useRef } from "react";
+import BlockedBubble from './BlockedBubble';
 function ChatWindow() {
   const messages=useSelector((state)=>state.chat.messages);
   const user=useSelector((state)=>state.auth.userData);
@@ -21,11 +22,13 @@ function ChatWindow() {
         else if(msg.deletedForEveryOne){
           return msg.senderId===user.id?<SendBubble key={index} message={"This message was deleted"} messageType={msg.messageType} status={msg?.status} time={msg.messageTime} id={msg?._id}  deletedForEveryOne={msg.deletedForEveryOne}/>:<RecieveBubble message={"This message was deleted"} key={index} messageType={msg.messageType} time={msg.messageTime} id={msg?._id}/>
         }
+        else if(msg.senderId==user.id && msg.dummy==true){
+          return <BlockedBubble message={msg.message}/>
+        }
         else{
           return msg.senderId===user.id?<SendBubble key={index} message={msg.message} messageType={msg.messageType} status={msg?.status} time={msg.messageTime} id={msg?._id} deletedForEveryOne={msg.deletedForEveryOne}/>:<RecieveBubble message={msg.message} key={index} messageType={msg.messageType} time={msg.messageTime} id={msg?._id} />
         }
     })}
-    
     <div ref={messagesEndRef} />
     </div >
   )

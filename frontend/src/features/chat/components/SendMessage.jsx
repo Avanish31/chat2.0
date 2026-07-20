@@ -45,8 +45,13 @@ function SendMessage() {
         status:false,
         tempId:tempId,
         deleteBy:[],
-        deletedForEveryOne:false
+        deletedForEveryOne:false,
+        dummy:false
       }))
+      let blocked=false;
+      if(conversationType=="dm"){
+        blocked=friends?.byId[selectedUserId]?.blockedYou ?? false;
+      }
       socket.emit('sendMessage',{
       conversationId:conversationId,
       senderId:senderId,
@@ -55,7 +60,9 @@ function SendMessage() {
       messageType:"text",
       messageTime:time,
       conversationType:conversationType,
-      tempId:tempId
+      tempId:tempId,
+      blocked:blocked,
+      dummy:false
     })
 
     if(conversationId){
@@ -107,6 +114,7 @@ function SendMessage() {
   const deleteMode=useSelector(state=>state.chat.deleteMode);
   const selectedMessages=useSelector(state=>state.chat.selectedMessagesDeletion);
   const size=selectedMessages.length;
+  const blocked=friends?.byId[selectedUserId]?.youBlocked ?? false;
   return (
     <>
     <div className=' w-full h-[8%] p-2 justify-center items-center  flex mt-4'>
@@ -123,7 +131,7 @@ function SendMessage() {
                 </button>
             </div>
         </div>:
-          <form className=' w-[90%] h-10 rounded-full flex bg-[#161717]' onSubmit={(e) => { e.preventDefault(); sendMessage();}}>
+          !blocked?(<form className=' w-[90%] h-10 rounded-full flex bg-[#161717]' onSubmit={(e) => { e.preventDefault(); sendMessage();}}>
             <SendFile/>
             <input type='text' className='ml-[4px] rounded-md bg-[#161717] h-[100%] w-[92%] outline-none focus:outline-none focus:ring-0  ' 
             value={textMsg}
@@ -133,7 +141,7 @@ function SendMessage() {
             <button type="submit">
               <img className='w-8 h-8 ' src='/images/send.png' onClick={sendMessage}/>
             </button>
-        </form>  }
+        </form> ):null }
     </div>
     </>
   )

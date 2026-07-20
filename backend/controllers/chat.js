@@ -12,10 +12,26 @@ async function InitialChatLoader(req,res){
     const userId=req.user._id.toString();
     for(const chat of chats){
         const lastseenId=chat.lastSeenMessage?.get(userId);
-        const count=await Message.countDocuments({
+        let message=await Message.find({
             conversationId:chat._id,
-            ...(lastseenId && {_id: {$gt:lastseenId}})
+            ...(lastseenId && {_id: {$gt:lastseenId}}),
+            dummy:false
         });
+        const otherId=chat.participants.find(p=>p._id.toString()!==userId)._id;
+        const intervals=chat.blocked.filter(b=>b.blockedBy.equals(userId) && b.blockedUser.equals(otherId));
+        message=message.filter(msg=>{
+            if(msg.senderId.equals(userId)){
+                return true;
+            }
+            for(const interval of intervals){
+                const end=interval.unblockedAt??new Date(8640000000000000);
+                if(msg.createdAt>=interval.blockedAt && msg.createdAt<=end){
+                    return false;
+                }
+            }
+            return true;
+        })
+        const count=message.length;
         console.log(userId+" "+count);
         unreadMap[chat._id.toString()]=count;
     }
@@ -24,14 +40,16 @@ async function InitialChatLoader(req,res){
             .filter(p=>p._id.toString()!==userId)
             .map(p=>{
                 const otherId=p._id.toString();
+                const youBlocked=chat.blocked.some(b=>b.blockedBy.equals(userId)  && b.blockedUser.equals(otherId) && b.unblockedAt==null);
+                const blockedYou=chat.blocked.some(b=>b.blockedBy.equals(otherId)  && b.blockedUser.equals(userId) && b.unblockedAt==null);
                 return {
                     id:otherId,
                     name:p.name,
                     email:p.email,
                     profileImage:p.profileImage,
                     lastseen:p.lastseen,
-                    youBlocked:chat.blocked.get(userId)===true,
-                    blockedYou:chat.blocked.get(otherId)===true,
+                    youBlocked:youBlocked,
+                    blockedYou:blockedYou,
                     conversationId:chat._id
                 }
             })
@@ -41,31 +59,62 @@ async function InitialChatLoader(req,res){
     }).sort({updatedAt:-1})
     const conversation= await Promise.all(
     chat2.map(async (chat) => {
-    const messages = await Message.find({ conversationId: chat._id })
-      .sort({ createdAt: -1 })
-      .limit(1);
-  
-    let lastMessageStatus=false;
-    const lastSenderId=messages[0].senderId;
+    let lastMessageStatus=false;    
+    let lastMessage=null;
     if(chat.conversationType==="dm"){
-        const lastMessageId = messages.length ? messages[0]._id : null;
+        let message=await Message.find({conversationId:chat._id,dummy:false}).sort({createdAt: -1});
+        const otherId=chat.participants.find(id=>id!=userId);
+        let intervals=chat.blocked.filter(b=>b.blockedBy.equals(userId) && b.blockedUser.equals(otherId));
+        const lastMessageId = message.length ? message[0]._id : null;
         const id=chat.participants.find(id=>id!=userId);
         const lastId = chat.lastSeenMessage?.get(id);
-        lastMessageStatus=lastId && lastMessageId && lastId.toString() === lastMessageId.toString();
+        message=message.filter(msg=>{
+            if(msg.senderId.equals(userId)){
+                return true;
+            }
+            for(const interval of intervals){
+                const end=interval.unblockedAt??new Date(8640000000000000);
+                if(msg.createdAt>=interval.blockedAt && msg.createdAt<=end){
+                    return false;
+                }
+            }
+            return true;
+        })
+        lastMessage= message.find(
+    msg => !msg.deleteBy.some(id => id.equals(userId)));
+        intervals=chat.blocked.filter(b=>b.blockedBy.equals(otherId) && b.blockedUser.equals(userId));
+        let blocked = false;
+            if(lastMessage){
+            for (const interval of intervals) {
+                const end = interval.unblockedAt ?? new Date(8640000000000000);
+
+                if (
+                    lastMessage.createdAt >= interval.blockedAt &&
+                    lastMessage.createdAt <= end
+                ) {
+                    blocked = true;
+                    break;
+                }
+            }
+        lastMessageStatus=blocked?false:(lastId && lastMessage._id.toString() <= lastId.toString())
+        }
     }
-    const lastMessage=await Message.findOne({
+    else{
+     lastMessage=await Message.findOne({
         conversationId:chat._id,
         deleteBy: { $nin: [userId] }
     }).sort({createdAt:-1});
-    
+    }   
+    console.log("lastMessageStatus "+lastMessageStatus);
+   
     return {
       conversationId: chat._id,
       participants: chat.participants,
       lastMessage:lastMessage?.deletedForEveryOne?"This message was deleted":lastMessage?.message,
       lastMessageId:lastMessage?._id,
       lastMessageTime: lastMessage?.createdAt??null,
-      lastMessageStatus:lastMessage?.lastMessageStatus,
-      lastSenderId:lastMessage?.lastSenderId,
+      lastMessageStatus:lastMessageStatus,
+      lastSenderId:lastMessage?.senderId,
       unreadCount: unreadMap[chat._id.toString()] || 0,
       deletedUntil: chat.deletedUntil?.get(userId),
       conversationType: chat.conversationType,
@@ -105,18 +154,63 @@ async function newChatHandler(req,res){
     })
 }
 async function messageHandler(req,res){
-    const convId=req.params.conversationId
+    const convId=req.params.conversationId;
+    const token=req.cookies?.token;
+    const data=validateToken(token);
+    const userId=data._id
     let messages=await Message.find({conversationId:convId}).sort({ createdAt: 1 });
     const conversation=await Conversation.findById(convId);
     const lastSeenMessage=conversation?.lastSeenMessage;
     const { id, type } = req.query;
+    let intervals=conversation.blocked.filter(b=>b.blockedBy.equals(userId) && b.blockedUser.equals(id));
     if(messages.length!=0 && type=="dm"){
-        const lastId=lastSeenMessage.get(id);
-        messages=messages.map((msg)=>({
-            ...msg.toObject(),
-            status: lastId && msg._id.toString() <= lastId.toString()
-        }))
+        messages=messages.filter(msg=>{
+            if(msg.senderId.equals(userId)){
+                return true;
+            }
+            for(const interval of intervals){
+                const end=interval.unblockedAt??new Date(8640000000000000);
+                if(msg.createdAt>=interval.blockedAt && msg.createdAt<=end){
+                    return false;
+                }
+            }
+            if(msg.dummy==false){
+            return true;
+            }
+        })
     }
+        const lastId=lastSeenMessage.get(id);
+        intervals=conversation.blocked.filter(b=>b.blockedBy.equals(id) && b.blockedUser.equals(userId));
+        // messages=messages.map((msg)=>({
+        //     ...msg.toObject(),
+        //     status: lastId && msg._id.toString() <= lastId.toString()
+        // }))
+        messages = messages.map(msg => {
+            let blocked = false;
+
+            for (const interval of intervals) {
+                const end = interval.unblockedAt ?? new Date(8640000000000000);
+
+                if (
+                    msg.createdAt >= interval.blockedAt &&
+                    msg.createdAt <= end
+                ) {
+                    blocked = true;
+                    break;
+                }
+            }
+
+            return {
+                ...msg.toObject(),
+                status: blocked
+                    ? false
+                    : (lastId && msg._id.toString() <= lastId.toString())
+            };
+        });
+
+    // messages.forEach((msg)=>{
+    //     console.log(msg.message+" "+msg.status+" "+msg.createdAt);
+    // })
     res.status(200).json({
         messages:messages
     })
@@ -142,13 +236,38 @@ async function notificationHandler(req,res){
    const chats=await Conversation.find({
         participants:req.user._id,    
     })
+    // let sum=0;
+    // for(const chat of chats){
+    //     const lastseenId=chat.lastSeenMessage?.get(userId);
+    //     const count=await Message.countDocuments({
+    //         conversationId:chat._id,
+    //         ...(lastseenId && {_id: {$gt:lastseenId}})
+    //     });
+    //     sum+=count;
+    // }
     let sum=0;
     for(const chat of chats){
         const lastseenId=chat.lastSeenMessage?.get(userId);
-        const count=await Message.countDocuments({
+        let message=await Message.find({
             conversationId:chat._id,
-            ...(lastseenId && {_id: {$gt:lastseenId}})
+            ...(lastseenId && {_id: {$gt:lastseenId}}),
+            dummy:false
         });
+        const otherId=chat.participants.find(id=>id.toString()!==userId);
+        const intervals=chat.blocked.filter(b=>b.blockedBy.equals(userId) && b.blockedUser.equals(otherId));
+        message=message.filter(msg=>{
+            if(msg.senderId.equals(userId)){
+                return true;
+            }
+            for(const interval of intervals){
+                const end=interval.unblockedAt??new Date(8640000000000000);
+                if(msg.createdAt>=interval.blockedAt && msg.createdAt<=end){
+                    return false;
+                }
+            }
+            return true;
+        })
+        const count=message.length;
         sum+=count;
     }
     res.status(200).json({
@@ -157,7 +276,7 @@ async function notificationHandler(req,res){
 }
 async function deleteMessageForMeHandler(req,res){
     const { selectedMessagesDeletion } = req.body;
-     const token=req.cookies?.token;
+    const token=req.cookies?.token;
     const data=validateToken(token);
     const userId=data._id
     console.log(userId);

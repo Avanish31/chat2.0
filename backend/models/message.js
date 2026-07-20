@@ -35,6 +35,10 @@ const messageSchema=new Schema({
     deletedForEveryOne:{
         type:Boolean,
         default:false
+    },
+    dummy:{
+        type:Boolean,
+        default:false
     }
 
 },{timestamps:true})

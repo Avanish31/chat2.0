@@ -27,6 +27,8 @@ function MainBar() {
   const cbyId=conversations.byId;
   const fbyId=friends.byId;
   const userTyping=useSelector(state=>state.chat.userTyping);
+  const youblocked=friends?.byId[id]?.youBlocked ?? false;
+    console.log(friends?.byId[id]?.name+" has been blocked "+youblocked);
  useEffect(() => {
   console.log("inside useffect");
   dispatch(setSelectedUserId(id));
@@ -82,6 +84,7 @@ function MainBar() {
   }
 }, [id,friends,conversations,dispatch]);
 console.log(conversationId);
+
 useEffect(() => {
     if (conversationId) {
         axios
@@ -101,11 +104,14 @@ useEffect(() => {
 
     const socket = getSocket();
     const participants=conversations.byId[conversationId].participants.filter(id=>id!==userId);
+  if(!youblocked){
+      console.log("conversation opennned "+conversationId);
     socket.emit("openedConv", {
         conversationId,
         conversationType: type,
         participants:participants
     });
+    }
 
     dispatch(clearUnreadCount(conversationId));
 }, [conversationId, chatMeta, type]);
@@ -119,29 +125,31 @@ useEffect(() => {
 const presence=useSelector(state=>state.chat.presence);
 const lastseen=presence[id]?.lastseen;
 const status=presence[id]?.status;
+const blocked=friends?.byId[id]?.blockedYou ?? false;
+console.log("blocked status "+blocked)
   return (
     <div className='w-[65%] h-screen text-white bg-[#0B141A] flex flex-col'>
       {(conv)?(
         <>
       <div className='w-full h-[10%]  bg-[#161717] border-b border-b-blue-400  flex '>
         <div className=' w-[60%] flex items-center gap-2 '>
-          <img className="w-16 h-16 rounded-full" src={conv.profileImage}/>
+          {!blocked?<img className="w-16 h-16 rounded-full" src={conv.profileImage}/>:<img className="w-16 h-16 rounded-full" src='/images/blockedProfilePhoto.png'/>}
           <div className='flex flex-col justify-center'>
             <p>{conv.name}</p>
             
-          {type=="dm" && userTyping?<p className="text-[#25D366] font-medium">typing...</p>:(<>{!status&& lastseen?<>{lastseen}</>:null}</>)}
+          {!blocked?(type=="dm" && userTyping?<p className="text-[#25D366] font-medium">typing...</p>:(<>{!status&& lastseen?<>{lastseen}</>:null}</>)):null}
           </div>
         </div>
         <div className=' w-[40%] flex items-center justify-evenly  '>
          {
             type === "dm" ? (
               <>
-                {status ? (
+                {!blocked?(status ? (
                   <img className="w-8 h-8 rounded-full" src="/images/online.png" />
                 ) : (
                   <img className="w-8 h-8 rounded-full" src="/images/offline.png" />
-                )}
-                <Block />
+                )):null}
+                {conversationId && <Block />}
               </>
             ) : null
           }
