@@ -23,6 +23,7 @@ export async function chatAuth(dispatch,navigate){
      dispatch(setFriends(friend));
     }
     if(conversation.length>0){
+    
     const chatMeta=conversation.map(conv=>({
         id:conv.conversationId,
         lastMessage:conv.lastMessage,

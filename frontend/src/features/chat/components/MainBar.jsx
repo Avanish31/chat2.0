@@ -11,6 +11,11 @@ import axios from 'axios'
 import {fetchData} from '../services/newChatHandle'
 import { addPresence, setSelectedUserId,setMessages ,setSelectedConversationType,setSelectedConversationId,clearUnreadCount} from '../state/chat'
 import { getSocket } from '../../../socket/socketClient'
+import SmallPreview from './SmallPreview'
+import SendMedia from './SendMedia'
+import LargePreview from './LargePreview'
+import { clearFiles } from '../services/file'
+import { updateCaption ,clearSelectedMedia, addMediaStore} from '../state/media'
 function MainBar() {
   const [conv,setConv]=useState(null);
   const {id}=useParams();
@@ -82,21 +87,75 @@ function MainBar() {
   if(type=="dm"){
   loadRealTimeData();
   }
+  dispatch(clearSelectedMedia());
 }, [id,friends,conversations,dispatch]);
 console.log(conversationId);
 
 useEffect(() => {
-    if (conversationId) {
-        axios
-            .get(`/api/chat/getMessages/${conversationId}?id=${id}&type=${type}`)
-            .then(res => {
-                dispatch(setMessages(res.data.messages));
-            });
-    } else {
+    // if (conversationId) {
+    //     axios
+    //         .get(`/api/chat/getMessages/${conversationId}?id=${id}&type=${type}`)
+    //         .then(async(res) => {
+    //             dispatch(setMessages(res.data.messages));
+    //             const messages=res.data.messages;
+    //             const mediaMessags=messages.filter((msg)=>msg.messageType==="media");
+    //             for(const media of mediaMessags){
+    //               const mediaDetails=await axios.get(`/api/chat/getMediaDetails/${media.message}`);
+    //               dispatch(addMediaStore(mediaDetails.data));
+    //             }
+    //         });
+        
+    // } else {
+    //     dispatch(setMessages([]));
+    // }
+    
+    if (!conversationId) {
         dispatch(setMessages([]));
+        return;
     }
-   
-}, [friends,conversations,conversationId]);
+    const controller = new AbortController();
+    const loadMessages = async () => {
+        try {
+            const res = await axios.get(
+                `/api/chat/getMessages/${conversationId}?id=${id}&type=${type}`,
+                { signal: controller.signal }
+            );
+
+            const messages = res.data.messages;
+            const mediaMessages = messages.filter(
+                (msg) => msg.messageType === "media"
+            );
+
+            const mediaDetails = await Promise.all(
+                mediaMessages.map((media) =>
+                    axios.get(
+                        `/api/chat/getMediaDetails/${media.message}`,
+                        { signal: controller.signal }
+                    )
+                )
+            );
+            console.log(mediaDetails);
+            mediaDetails.forEach((res) => {
+                console.log("MediaDetails through main  bar");
+                console.log(res.data);
+                dispatch(addMediaStore(res.data));
+            });
+            dispatch(setMessages(messages));
+        } catch (error) {
+            if (error.code !== "ERR_CANCELED") {
+                console.error("Failed to load conversation:", error);
+            }
+        }
+    };
+
+    loadMessages();
+
+    return () => {
+        controller.abort();
+    };
+
+    //[friends,conversations,conversationId]
+}, [conversationId]);
 useEffect(() => {
     if (!conversationId) return;
 
@@ -120,13 +179,22 @@ useEffect(() => {
       dispatch(setSelectedConversationId(null));
       dispatch(setSelectedConversationType(null));
       dispatch(setSelectedUserId(null));
+      
     };
   }, []);
 const presence=useSelector(state=>state.chat.presence);
 const lastseen=presence[id]?.lastseen;
 const status=presence[id]?.status;
 const blocked=friends?.byId[id]?.blockedYou ?? false;
-console.log("blocked status "+blocked)
+const previewMode=useSelector(state=>state.media.previewMode);
+const selectedMedia=useSelector(state=>state.media.selectedMedia);
+const mbyId=selectedMedia.byId;
+const mallIds=selectedMedia.allIds;
+const selectedPreview=useSelector(state=>state.media.selectedPreview);
+console.log(mallIds);
+console.log(selectedPreview);
+console.log("blocked status "+blocked);
+
   return (
     <div className='w-[65%] h-screen text-white bg-[#0B141A] flex flex-col'>
       {(conv)?(
@@ -149,15 +217,48 @@ console.log("blocked status "+blocked)
                 ) : (
                   <img className="w-8 h-8 rounded-full" src="/images/offline.png" />
                 )):null}
-                {conversationId && <Block />}
+                {conversationId && !previewMode && <Block />}
               </>
             ) : null
           }
-           <DeleteChat />
+          {!previewMode &&<DeleteChat />}
         </div>
       </div>
-      <ChatWindow />
-      <SendMessage/>
+      {!previewMode?(<><ChatWindow /> <SendMessage/></>):
+      <>
+      <div className='w-[100%] h-screen text-white bg-[#0B141A] flex flex-col justify-evenly'>
+        <div className='relative h-[15%] flex flex-col justify-center items-center'>
+          <button className="absolute top-2 left-2" onClick={()=>{dispatch(clearSelectedMedia()); clearFiles();}}>
+            <img src="/images/cross.png" className="h-5 w-5" alt="Close" />
+          </button>
+
+           <p>{mbyId[selectedPreview].name}</p>
+           {mbyId[selectedPreview].pages && <p>{mbyId[selectedPreview].pages}</p>}
+        </div>
+        <div className='  h-[50%] flex justify-center items-center'>
+          <div className={` h-[100%] w-[50%] flex justify-center items-center ${mbyId[selectedPreview].validationErrors.length>0?"border-4 border-red-500 rounded-lg":""}`}>
+              <LargePreview icon={mbyId[selectedPreview].icon} category={mbyId[selectedPreview].category} type={mbyId[selectedPreview].type} preview={mbyId[selectedPreview].preview} validationErrors={mbyId[selectedPreview].validationErrors}/> 
+          </div>
+        </div>
+        <form className='  h-[15%] flex justify-center items-center'>
+         <input type='text' className='ml-[4px] rounded-md bg-[#161717] h-[40%] w-[80%] outline-none focus:outline-none focus:ring-0'
+         value={mbyId[selectedPreview].caption}
+         onChange={(e)=>{dispatch(updateCaption(e.target.value))}}
+         ></input>
+        </form>
+        <div className='relative   h-[15%] flex justify-center items-center'>
+          <div className='flex  gap-2'>
+            {mallIds.map(mediaId=>(
+              <SmallPreview  icon={mbyId[mediaId].icon}  selected={selectedPreview===mediaId} mediaId={mediaId} validationErrors={mbyId[mediaId].validationErrors}/>
+            ))}
+          </div>
+          <SendMedia/>
+          
+        </div>
+      </div>
+      </>
+      }
+      
       </>
       ):(<div className='w-full  font-oswald font-bold text-6xl text-white h-[100%]  flex justify-center items-center'>
           START CHATING

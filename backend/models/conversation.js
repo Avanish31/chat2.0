@@ -49,8 +49,11 @@ const conversationSchema=new Schema({
     },
     groupEmail:{
         type:String,
-    }
-
+    },
+    visibility:[{
+        type:Schema.Types.ObjectId,
+        ref:'user'
+    }]
 },{timestamps:true})
 conversationSchema.index(
     { groupEmail: 1 },

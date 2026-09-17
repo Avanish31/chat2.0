@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
+import { useRef,useEffect } from 'react';
 import { updateDeleteMode,updateDeleteMessageConfirmation,clearSelectedMessagesDeletion ,clearDeleteForEveryOneEnabler,updateSelectedMessagesDeletion,updateDeleteForEveryOneEnabler} from '../state/chat';
 function DeleteChat() {
     const [isOpen,setIsOpen]=useState(false);
@@ -24,9 +25,25 @@ function DeleteChat() {
       })
       
     }
+    const containerRef = useRef(null);
+    
+    useEffect(() => {
+      function handleClickOutside(e) {
+        if (
+          containerRef.current &&
+          !containerRef.current.contains(e.target)
+        ) {
+          setIsOpen(false);
+        }
+      }
+    
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
   return (
-   <div className="relative inline-block">
-  <button onClick={()=>setIsOpen(true)}>
+   <div  ref={containerRef} className="relative inline-block">
+  <button onClick={()=>setIsOpen(prev=>!prev)}>
     <img
       className="w-8 h-8 rounded-full"
       src="/images/delete.png"
@@ -34,16 +51,9 @@ function DeleteChat() {
     />
   </button >
 
-  {isOpen &&<div className="absolute top-full right-0  h-40 w-40 bg-[#262727] rounded-md shadow-lg flex flex-col justify-evenly" >
+  {isOpen &&<div className="absolute top-full right-0  h-40 w-40 bg-[#262727] rounded-md shadow-lg flex flex-col justify-evenly z-50" >
     <button className='flex pl-4 h-[33.33%] hover:bg-[rgb(61,59,59)] items-center rounded-md'onClick={handleDeleteMessage}>Delete messages</button>
     <button className='flex pl-4 h-[33.33%] hover:bg-[rgb(61,59,59)] items-center rounded-md' onClick={handleClearChat}>Clear Chat</button>
-    <button className='flex pl-4 h-[33.33%] hover:bg-[rgb(61,59,59)] items-center rounded-md' onClick={()=>{
-        setIsOpen(false);
-        dispatch(updateDeleteMessageConfirmation(false));
-        dispatch(updateDeleteMode(false));
-        dispatch(clearSelectedMessagesDeletion());
-        dispatch(clearDeleteForEveryOneEnabler());
-        }}>Close</button>
   </div>
 }
 </div>

@@ -25,7 +25,7 @@ function SendMessage() {
     console.log('send button clicked');
     if(message.length>0){
       const tempId = crypto.randomUUID();
-      if(conversations[selectedUserId] && conversationType=="group"){
+      if(conversations[selectedUserId]){
         const participants=conversations[selectedUserId].participants;
         receiverId=participants.filter(id=>id!=senderId);
       }
@@ -131,9 +131,11 @@ function SendMessage() {
                 </button>
             </div>
         </div>:
-          !blocked?(<form className=' w-[90%] h-10 rounded-full flex bg-[#161717]' onSubmit={(e) => { e.preventDefault(); sendMessage();}}>
+          !blocked?(
+            <>
             <SendFile/>
-            <input type='text' className='ml-[4px] rounded-md bg-[#161717] h-[100%] w-[92%] outline-none focus:outline-none focus:ring-0  ' 
+          <form className=' w-[90%] h-10 rounded-full flex bg-[#161717]' onSubmit={(e) => { e.preventDefault(); sendMessage();}}>
+            <input type='text' className='ml-[4px] rounded-md bg-[#161717] h-[100%] w-[98%] outline-none focus:outline-none focus:ring-0  ' 
             value={textMsg}
             onChange={handelChange}
            
@@ -141,7 +143,9 @@ function SendMessage() {
             <button type="submit">
               <img className='w-8 h-8 ' src='/images/send.png' onClick={sendMessage}/>
             </button>
-        </form> ):null }
+        </form> 
+        </>):null 
+        }
     </div>
     </>
   )

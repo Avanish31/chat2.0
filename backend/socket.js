@@ -1,8 +1,13 @@
 const cookie = require('cookie');
 const User=require('./models/user');
 const Message=require('./models/message');
-const Conversation=require('./models/conversation')
+const Conversation=require('./models/conversation');
+const Media = require('./models/media');
+const storageService=require('./services/storage/index');
+const {activeDownloads}=require('./services/localDownload')
+const localDownloader=require('./services/localDownload');
 let onlineUsers=new Set();
+const crypto = require("crypto");
 function initSocket(io, validateToken){
     io.use((socket,next)=>{
         const rawCookie=socket.handshake.headers.cookie;
@@ -44,16 +49,17 @@ function initSocket(io, validateToken){
         
         })
         socket.on('sendMessage',async(data)=>{
-            console.log(data.message);
+            
             let conversationId=data.conversationId
             console.log("conversationId "+conversationId);
             console.log("Server socket id:", socket.id);
             let message=null;
-            if(!data.conversationId){
+            if(!data.conversationId && data.messageType!=="media"){
                 const conversation=await Conversation.create({
                     participants:[data.senderId,data.receiverId[0]],
                     lastMessageTime:new Date().toISOString(),
                     conversationType:data.conversationType,
+                    visibility:[data.senderId,data.receiverId[0]]
                 })
                 conversationId=conversation._id
                 message=await Message.create({
@@ -63,7 +69,8 @@ function initSocket(io, validateToken){
                     message:data.message,
                     messageType:data.messageType,
                     messageTime:data.messageTime,
-                    dummy:data.dummy
+                    dummy:data.dummy,
+                    visibility:conversation.participants
                  })
                 console.log("Emitting conversationId to", socket.id);
                 io.to(socket.userId).emit("conversationId", {
@@ -84,6 +91,8 @@ function initSocket(io, validateToken){
             }
             }
             if(!message){
+            if(data.messageType!="media"){
+            const conv=await Conversation.findOne({_id:conversationId});
              message=await Message.create({
                     conversationId:conversationId,
                     senderId:data.senderId,
@@ -91,8 +100,23 @@ function initSocket(io, validateToken){
                     message:data.message,
                     messageType:data.messageType,
                     messageTime:data.messageTime,
-                    dummy:data.dummy
+                    dummy:data.dummy,
+                    visibility:conv.participants
             })
+            }
+            else{
+                const conv=await Conversation.findOne({_id:conversationId});
+                conv.visibility = conv.participants;
+                await conv.save();
+                const tempMessage=await Message.findOneAndUpdate(
+                    {senderId:data.senderId,message:data.message},
+                    {
+                        visibility:conv.participants
+                    }
+                )
+                message=tempMessage;
+
+            }
             }
             if(!data.dummy){
             await Conversation.findByIdAndUpdate(
@@ -104,11 +128,13 @@ function initSocket(io, validateToken){
                         }
             );
             }
+            if(data.messageType!="media"){
             socket.emit('messageSaved',{
                 tempId:data.tempId,
                 messageId:message._id,
                 convId:conversationId
             })
+        }
             if(!data.blocked){
                 console.log("blocked status "+data.blocked);
                 for (const id of data.receiverId) {
@@ -286,7 +312,82 @@ function initSocket(io, validateToken){
             }
         )
     })
+
+   
+    socket.on('downloadMedia',async(data)=>{
+        const res=await Media.findOne({mediaId:data.mediaId});
+        const access = await storageService.getAccessInfo(res.storageKey);
+        if (access.method === "stream") {
+            await localDownloader.downloadFile({
+                mediaId:data.mediaId,
+                filePath: access.filePath,
+                socket,
+                startByte:data.startByte,
+                endByte:data.endByte,
+            });
+        }
     })
+    socket.on("media:cancel", async({ mediaId }) => {
+        const controller = activeDownloads.get(mediaId);
+    console.log("CANCEL mediaId:", mediaId);
+    console.log("ACTIVE KEYS:", [...activeDownloads.keys()]);
+        console.log("CONTROLLER HITTT ",controller )
+        console.log("MediaCancel hitt");
+        if (!controller) return;
+        controller.abort();
+    });
+    socket.on('preSaveMediaMessages',async(data,callback)=>{
+         let conversationId=data.conversationId
+         let message =null;
+        if(!conversationId){
+           const conversation=await Conversation.create({
+                participants:[data.senderId,data.receiverId[0]],
+                lastMessageTime:new Date().toISOString(),
+                conversationType:data.conversationType,
+                visibility:[data.senderId]
+            })
+            conversationId=conversation._id
+            message=await Message.create({
+                    conversationId:conversationId,
+                    senderId:data.senderId,
+                    receiverId:data.receiverId,
+                    message:data.message,
+                    messageType:data.messageType,
+                    messageTime:data.messageTime,
+                    dummy:data.dummy,
+                    visibility:[data.senderId]
+            })
+                io.to(socket.userId).emit("conversationId", {
+                    conversationId,
+                    message: data.message,
+                    messageId:message._id,
+                    receiverId: data.receiverId
+                });
+        }
+        if(!message){
+             message=await Message.create({
+                    conversationId:conversationId,
+                    senderId:data.senderId,
+                    receiverId:data.receiverId,
+                    message:data.message,
+                    messageType:data.messageType,
+                    messageTime:data.messageTime,
+                    dummy:data.dummy,
+                    visibility:[data.senderId]
+            })
+        }
+        socket.emit('messageSaved',{
+                tempId:data.tempId,
+                messageId:message._id,
+                convId:conversationId
+        })
+        callback({
+            success: true
+        });
+
+
+    })
+})
 
    
     

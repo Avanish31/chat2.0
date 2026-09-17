@@ -39,7 +39,11 @@ const messageSchema=new Schema({
     dummy:{
         type:Boolean,
         default:false
-    }
+    },
+    visibility:[{
+            type:Schema.Types.ObjectId,
+            ref:'user'
+    }]
 
 },{timestamps:true})
 const Messages=model('message',messageSchema);

@@ -10,3 +10,25 @@
   -ms-overflow-style: none;  /* IE, Edge */
   scrollbar-width: none;     /* Firefox */
 }
+@keyframes progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+.animate-progress {
+  animation-name: progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}

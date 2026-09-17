@@ -3,6 +3,10 @@ import { useSelector} from "react-redux";
 import { addChatMeta, addFriend, setChatMeta, addPresence ,addMessages,addLastMessage, addConversations, setSelectedConversationId,updateMessageStatus,updateChatMeta,updateLastMessageStatus,updateMessageId,updateUserTyping,updateChatMetaTypingStatus,updateTotalNotificationCount,deleteMessageForEveryOne,updateLastMessageContent,updateBlockedYoustatus} from "../features/chat/state/chat";
 import axios from "axios";
 import store from '../store'
+import { updateDownloadedBytes,saveChunk,deleteFile,setFile,updateCacheStatus ,deleteChunksByMediaId,markDownloadFailed,updateFileStatus,getMediaFile} from "../features/chat/services/indexedDbServices";
+import { updateBytesDownloadQueue, updateStatusDownloadQueue } from "../features/chat/state/media";
+import { chunksToFile } from "../features/chat/services/downloader";
+import { addMediaStore } from "../features/chat/state/media";
 let init=false;
 
 export function resetSocketInit() {
@@ -41,7 +45,7 @@ socket.on('userOffline',async(data)=>{
 })
 console.log("Client socket id:", socket.id);
 socket.on('conversationId',async(data)=>{
-    console.log("convesrationId ");
+    console.log("CONVERSSSATIONIDff ",data.conversationId);
     const user=store.getState().auth.userData;
     const userId=user.id;
     dispatch(setSelectedConversationId(data.conversationId));
@@ -85,7 +89,6 @@ socket.on('conversationId',async(data)=>{
 
 socket.on('receiveMessage',async(data)=>{
     console.log("receiveMessage");
-  
     const chatActivity = window.location.pathname.startsWith("/chat");
     if(chatActivity){
     const friends = store.getState().chat.friends;
@@ -97,10 +100,23 @@ socket.on('receiveMessage',async(data)=>{
     const userId=user.id;
     const conversations=store.getState().chat.conversations
     const cbyId=conversations.byId;
-     let lastMessage=data.message;
-      if(lastMessage.length>20){
+    let mediaDetails=null;
+    let lastMessage=data.message;
+    if(lastMessage.length>20 && data.messageType=="text"){
         lastMessage=lastMessage.slice(0,15)+".....";
-      }
+    }
+    else if(data.messageType=="media"){
+        mediaDetails=await axios.get(`/api/chat/getMediaDetails/${data.message}`);
+        console.log("Mediadetails",mediaDetails);
+        lastMessage=`${mediaDetails.data.category} received`
+        const mediaStore=store.getState().media.MediaStore;
+        if(!mediaStore.byId[data.message]){
+            dispatch(addMediaStore(mediaDetails.data));
+        }
+        console.log("SIZE ",mediaDetails.data.size);
+        await setFile("downloadedFiles",data.message,undefined,mediaDetails.data.size,true);
+        
+    }
     if(byId[data.senderId] || cbyId[data.conversationId]){
 
     dispatch(addLastMessage({
@@ -294,5 +310,81 @@ socket.on('unblocked',async(data)=>{
         status:false
     }))
 })
+socket.on("media:chunk", async (data, ack) => {
+
+    console.log("chunk incoming");
+
+    try {
+
+        await saveChunk(
+            data.mediaId,
+            data.startByte,
+            data.endByte,
+            data.chunk
+        );
+
+        const downloadedBytes = data.endByte + 1;
+
+        dispatch(updateBytesDownloadQueue({
+            downloadedBytes,
+            mediaId: data.mediaId
+        }));
+
+        await updateDownloadedBytes(
+            "downloadedFiles",
+            data.mediaId,
+            downloadedBytes
+        );
+
+       
+        ack();
+
+    } catch (error) {
+        console.error("Error processing chunk:", error);
+        ack({
+            error: error.message
+        });
+    }
+});
+socket.on('media:complete',async(data)=>{
+    console.log("chunk completed");
+    const state = store.getState();
+    const mediaStore=state.media.MediaStore;
+    const file=await chunksToFile(data.mediaId,mediaStore.byId[data.mediaId].name,mediaStore.byId[data.mediaId].mimeType);
+    if (!file) {
+            throw new Error("No chunks found");
+    }
+    await deleteFile("downloadedFiles",data.mediaId);
+    console.log("DELETED OLD FILE:", data.mediaId);
+    await deleteChunksByMediaId(data.mediaId);
+    await setFile("downloadedFiles",data.mediaId,file,mediaStore.byId[data.mediaId].size);
+    console.log(
+    "AFTER SETFILE:",
+    await getMediaFile("downloadedFiles", data.mediaId)
+);
+    await updateFileStatus('downloadedFiles',data.mediaId,"completed");
+    console.log(
+    "AFTER STATUS:",
+    await getMediaFile("downloadedFiles", data.mediaId)
+);
+    store.dispatch(updateStatusDownloadQueue({
+        mediaId:data.mediaId,
+        status:"completed"
+    }))
+   
+})
+socket.on('"media:error',async(data)=>{
+    console.log("media error");
+    await deleteChunksByMediaId(data.mediaId);
+    await markDownloadFailed('downloadedFiles',data.mediaId);
+    store.dispatch(updateStatusDownloadQueue({
+        mediaId:data.mediaId,
+        status:"failed"
+    }))
+    await updateFileStatus('downloadedFiles',mediaId,"failed");
+})
+
+
+
 }
 

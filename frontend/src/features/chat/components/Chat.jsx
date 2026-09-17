@@ -9,6 +9,9 @@ import { useState } from 'react'
 import { updateDeleteMessageConfirmation,updateDeleteMode,clearSelectedMessagesDeletion,deleteMessageForEveryOne,deleteMessageForMe ,updateLastMessageContent,updateLastMessageDeleteForMe,clearDeleteForEveryOneEnabler} from '../state/chat'
 import axios from 'axios'
 import { getSocket } from '../../../socket/socketClient'
+import Snackbar from '../../../partials/SnackBar'
+import { updateMediaError } from '../state/media'
+import Viewer from './Viewer'
 function Chat() {
   const dispatch=useDispatch();
   const navigate=useNavigate();
@@ -20,6 +23,7 @@ function Chat() {
   const userId=userData?.id;
   const cbyId=conversations.byId;
   const socket=getSocket();
+  const mediaError=useSelector(state=>state.media.mediaError);
   useEffect(()=>{
     chatAuth(dispatch,navigate);
     
@@ -29,7 +33,6 @@ function Chat() {
     };
   },[dispatch])
   const deleteMessageConfirmation=useSelector(state=>state.chat.deleteMessageConfirmation);
-  
   const deleteForEveryOneEnabler=useSelector(state=>state.chat.deleteForEveryOneEnabler);
   console.log(deleteForEveryOneEnabler)
   const handleDeleteEveryone=()=>{
@@ -83,9 +86,11 @@ function Chat() {
   const handleCancel=()=>{
     dispatch(updateDeleteMessageConfirmation(false));
   }
+  const showError=useSelector(state=>state.media.showError);
+  const showMediaFull=useSelector(state=>state.media.showMediaFull);
   return (
     <>
-    <div className='w-full flex'>
+    <div className='w-full flex h-screen overflow-hidden'>
     <SideBar/>
     <MainBar/>
     {deleteMessageConfirmation && <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-50">
@@ -95,7 +100,25 @@ function Chat() {
         <button className='flex  flex-1 pl-4  hover:bg-[rgb(61,59,59)] items-center rounded-md'onClick={handleCancel}>Cancel</button>
       </div>    
    </div>}
+   {mediaError?.active==true && <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-50">
+        <div className="relative bg-[#161717] rounded-lg p-5 w-[350px] min-h-[150px] shadow-lg"> 
+          <div className="text-white text-center"> 
+            {mediaError.message}
+             </div> 
+             <button onClick={()=>{
+              dispatch(updateMediaError({
+                mediaId:null,
+                active:false,
+                message:null
+              }))
+             }} className="absolute bottom-3 right-4 px-3 py-1 bg-blue-600 text-white rounded-md" > Close </button> </div>
+   </div>}
+   {showMediaFull?.active==true && <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-50">
+       <Viewer mediaId={showMediaFull.mediaId}/>
+   </div>}
+      {showError&&<Snackbar message={showError}/>}
     </div>
+   
     </>
   )
 }
