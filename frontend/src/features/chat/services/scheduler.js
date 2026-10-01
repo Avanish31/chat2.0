@@ -3,6 +3,9 @@ let scheduling = {
     download: false
 };
 import store from "../../../store";
+import axios from "axios";
+import { updateStatusUploadQueue } from "../state/media";
+import { saveUploadAbortController } from "./abortController";
 export function scheduleQueue({
     queueType,
     maxParallel,
@@ -26,7 +29,6 @@ export function scheduleQueue({
             if (active >= maxParallel) {
                 break;
             }
-
             const nextId = queue.allIds.find(id => {
                 return queue.byId[id].status === "pending";
             });
@@ -34,8 +36,19 @@ export function scheduleQueue({
             if (!nextId) {
                 break;
             }
-
+            if(queueType==="download"){
             startTask(nextId);
+            }
+            else{
+                store.dispatch(updateStatusUploadQueue({
+                    mediaId:nextId,
+                    status:"requesting"
+                }))
+                const controller=new AbortController();
+                saveUploadAbortController(nextId,controller);
+               axios.get(`/api/chat/checkEmptySlots/${nextId}`);
+               
+            }
         }
     } finally {
         scheduling[queueType] = false;

@@ -53,10 +53,20 @@ const handleFiles=async(e)=>{
   const files=Array.from(e.target.files);
   const validatedFiles=validateMedia(files);
   
-  if(validatedFiles.errors.length!=0){
-    console.log("smash ")
-    dispatch(setShowError(validatedFiles.errors[0].message));
-  }
+ if (
+    validatedFiles.errors.length !== 0 ||
+    validatedFiles.invalidFiles.length !== 0
+) {
+    if (validatedFiles.errors.length !== 0) {
+        dispatch(setShowError(validatedFiles.errors[0].message));
+    } else {
+        dispatch(
+            setShowError(
+                validatedFiles.invalidFiles[0].errors[0].message
+            )
+        );
+    }
+}
   else{
     const generatedPreview=await generatePreview(validatedFiles);
     

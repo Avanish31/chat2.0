@@ -7,6 +7,7 @@ import { updateDownloadedBytes,saveChunk,deleteFile,setFile,updateCacheStatus ,d
 import { updateBytesDownloadQueue, updateStatusDownloadQueue } from "../features/chat/state/media";
 import { chunksToFile } from "../features/chat/services/downloader";
 import { addMediaStore } from "../features/chat/state/media";
+import { startupload } from "../features/chat/services/uploader";
 let init=false;
 
 export function resetSocketInit() {
@@ -373,7 +374,7 @@ socket.on('media:complete',async(data)=>{
     }))
    
 })
-socket.on('"media:error',async(data)=>{
+socket.on('media:error',async(data)=>{
     console.log("media error");
     await deleteChunksByMediaId(data.mediaId);
     await markDownloadFailed('downloadedFiles',data.mediaId);
@@ -382,6 +383,23 @@ socket.on('"media:error',async(data)=>{
         status:"failed"
     }))
     await updateFileStatus('downloadedFiles',mediaId,"failed");
+})
+socket.on('startUpload',async(data,callback)=>{
+    console.log('START UPLOAD')
+    const mediaId=data.mediaId;
+    const state = store.getState();
+    const uploadQueue=state.media.uploadQueue;
+    if(uploadQueue?.byId[mediaId]?.status==="requesting"){
+        callback({
+            accepted:true
+        })
+        startupload(mediaId);
+    }
+    else{
+        callback({
+            accepted:false
+        })
+    }
 })
 
 

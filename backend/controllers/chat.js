@@ -8,6 +8,8 @@ const mediaService=require('../services/mediaService');
 const chunkService=require('../services/chunkService');
 const storageService=require('../services/storage/index');
 const {downloadFile}=require('../services/localDownload');
+const {queueSize,updateStatusByMediaId,add,removeByMediaId,peek,processQueue}=require('../services/uploadQueue');
+
 async function InitialChatLoader(req,res){
     const chats=await Conversation.find({
         participants:req.user._id,
@@ -331,27 +333,24 @@ async function chunkHandler(req, res) {
             media.totalChunks,
             media.extension
         );
-        console.log("MERGEFILEPATH "+mergedFilePath);
-        // await chunkService.deleteAllChunks(mediaId, totalChunks);
-        console.log("deleted aALL CHUNKS");
-        const rs=await storageService.saveFile(mediaId,mergedFilePath);
-        console.log("STORAGE KEY ",rs.storageKey);
+        
+        const rs=await storageService.saveFile(mediaId,mergedFilePath); 
         await mediaService.updateStorageKey(mediaId,rs.storageKey);
-        console.log("1");
         await mediaService.markUploadComplete(mediaId);
-        console.log("2");
         await new Promise(resolve => setTimeout(resolve, 800));
         await chunkService.deleteTempfile(mediaId);
-        console.log("3");
+        removeByMediaId(mediaId);
+        processQueue();
+        
     }
     console.log("REACHED END");
-    res.sendStatus(200);
+    return res.sendStatus(200);
     }catch(err){
         console.log("error  ");
         if(await chunkService.deleteTempfile(mediaId)){
             await mediaService.markUploadFailed(mediaId);
         }
-        res.sendStatus(500);
+        return res.sendStatus(500);
     }
     
    
@@ -399,7 +398,6 @@ async function chunkIndexHandler(req,res){
         index:index,
         totalChunks:media.totalChunks
     })
-
 }
 async function downloadHandler(req,res){
     const mediaId=req.params.mediaId;
@@ -458,7 +456,8 @@ async function cancelUploadHandler(req, res) {
             }
         }
     );
-
+    removeByMediaId(mediaId);
+    processQueue();
     return res.sendStatus(200);
 }
 async function updateUploadStatusHandler(req,res){
@@ -480,9 +479,12 @@ async function statusDetailHandler(req,res){
 async function markFailedHandler(req,res){
     console.log("MARKFAILED TRUGGRERED");
     const mediaId=req.params.mediaId;
+    
     if(await chunkService.deleteTempfile(mediaId)){
         await mediaService.markUploadFailed(mediaId);
     }
+    removeByMediaId(mediaId);
+    processQueue();
     res.sendStatus(200);
     
 }
@@ -497,6 +499,35 @@ async function handleBytes(req,res){
         uploadedBytes:uploadedBytes,
         totalBytes:media.fileSize
     })
+}
+async function handleUploadSlot(req, res) {
+
+    console.log("HIT OF SLOT");
+
+    const mediaId = req.params.mediaId;
+    const userId = req.user._id.toString();
+    const media=await Media.findOne({mediaId:mediaId});
+    let size=media?.fileSize;
+    if(media?.uploadedChunks*media?.chunkSize<media?.fileSize){
+        size=media?.fileSize-media?.uploadedChunks*media?.chunkSize
+    }
+    console.log("SIZE",size);
+    if (!onlineUsers.has(userId)) {
+        return res.status(400).json({
+            message: "User is offline"
+        });
+    }
+    add({
+        userId: userId,
+        mediaId: mediaId,
+        status: "queued",
+        fileSize:Number(size),
+        originalSize:media?.fileSize
+    });
+
+    await processQueue();
+
+    return res.sendStatus(200);
 }
 
 module.exports={
@@ -518,5 +549,5 @@ module.exports={
     statusDetailHandler,
     markFailedHandler,
     handleBytes,
-    
+    handleUploadSlot
 }

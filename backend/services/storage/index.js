@@ -3,8 +3,8 @@ const provider = process.env.STORAGE_PROVIDER || "local";
 let storage;
 
 switch (provider) {
-    case "firebase":
-        storage = require("./firebaseStorage");
+    case "supabase":
+        storage = require("./supabaseStorage");
         break;
 
     case "s3":

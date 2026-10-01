@@ -6,6 +6,7 @@ const Media = require('./models/media');
 const storageService=require('./services/storage/index');
 const {activeDownloads}=require('./services/localDownload')
 const localDownloader=require('./services/localDownload');
+const {removeByUserId}=require('./services/uploadQueue');
 let onlineUsers=new Set();
 const crypto = require("crypto");
 function initSocket(io, validateToken){
@@ -35,6 +36,7 @@ function initSocket(io, validateToken){
             const room=io.sockets.adapter.rooms.get(socket.userId);
             if(!room || room.size===0){
             onlineUsers.delete(socket.userId);
+            removeByUserId(socket.userId);
             const now = new Date();
             const lastseen= now.toLocaleDateString()+" on "+now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
             socket.broadcast.emit('userOffline',{
@@ -338,14 +340,23 @@ function initSocket(io, validateToken){
     });
     socket.on('preSaveMediaMessages',async(data,callback)=>{
          let conversationId=data.conversationId
+         let conversation;
+         console.log('CONVERSATION ID',conversationId);
          let message =null;
         if(!conversationId){
-           const conversation=await Conversation.create({
-                participants:[data.senderId,data.receiverId[0]],
-                lastMessageTime:new Date().toISOString(),
-                conversationType:data.conversationType,
-                visibility:[data.senderId]
-            })
+            conversation = await Conversation.findOne({
+                participants: {
+                    $all: [data.senderId, data.receiverId[0]]
+                }
+            });
+            if(!conversation){
+            conversation=await Conversation.create({
+                    participants:[data.senderId,data.receiverId[0]],
+                    lastMessageTime:new Date().toISOString(),
+                    conversationType:data.conversationType,
+                    visibility:[data.senderId]
+                })
+            }   
             conversationId=conversation._id
             message=await Message.create({
                     conversationId:conversationId,

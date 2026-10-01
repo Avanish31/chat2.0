@@ -149,8 +149,6 @@ function SendBubble({
 
     }, [mediaId, messageType, uploadItem]);
 
-   
-
     const uploadedBytes =
         uploadItem?.uploadedBytes ??
         serverBytes?.uploadedBytes ??
@@ -212,7 +210,15 @@ function SendBubble({
 
                 return;
             }
+            if (uploadStatus === "requesting") {
 
+                setUiState({
+                    type: "uploading",
+                    progress:0
+                });
+
+                return;
+            }
             if (uploadStatus === "failed") {
 
                 setUiState({

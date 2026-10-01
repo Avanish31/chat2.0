@@ -8,7 +8,7 @@ const {InitialChatLoader,searchHandler,newChatHandler,messageHandler,
     statusHandler,newFriendHandler,notificationHandler,deleteMessageForMeHandler,
     chunkHandler,uploadHandler,chunkIndexHandler,downloadHandler,MediaDetailsHandler,
     cancelUploadHandler,updateUploadStatusHandler,statusDetailHandler,markFailedHandler,
-    handleBytes,
+    handleBytes,handleUploadSlot
 }=require('../controllers/chat')
 router.get('/',InitialChatLoader);
 router.post('/search',searchHandler)
@@ -28,5 +28,6 @@ router.get('/cancelUpload/:mediaId',cancelUploadHandler);
 router.get('/updateUploadStatus/:mediaId',updateUploadStatusHandler);
 router.get('/getStatusDetail/:mediaId',statusDetailHandler);
 router.get('/markUploadFailed/:mediaId',markFailedHandler)
-router.get('/getBytes/:mediaId',handleBytes)
+router.get('/getBytes/:mediaId',handleBytes);
+router.get('/checkEmptySlots/:mediaId',handleUploadSlot)
 module.exports=router;

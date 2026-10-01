@@ -99,7 +99,13 @@ function SendMedia() {
                 resolution: resolution,
                 caption:byId[id].caption
             })
+            try{
           await setFile("uploadedFiles",id,file);
+            }catch(err){
+                console.log(err);
+                throw(err);
+
+            }
           const time = new Date().toLocaleTimeString([], {
                         hour: 'numeric',
                         minute: '2-digit',

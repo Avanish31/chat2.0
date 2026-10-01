@@ -17,7 +17,9 @@ function PdfMedia({file, uiButton, progress,mediaId,color}) {
   const mediaStore=useSelector(state=>state.media.MediaStore);
   const byId=mediaStore.byId;
   const handleUploadCancel=async()=>{
+    console.log("UPLOAD CANCEL HITTT"); 
     const controller=getUploadAbortController(mediaId);
+    console.log("CONTROLLER ",controller);
     if(!controller){
         return;
     }

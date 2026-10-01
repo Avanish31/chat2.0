@@ -10,6 +10,7 @@ const{Server}=require('socket.io');
 const chunkService=require('./services/chunkService');
 const app=express();
 const server=http.createServer(app);
+const {setIO,getIO}=require('./exportHelper');
 const io=new Server(server,{
     cors:{
         origin: "http://localhost:5173",
@@ -17,6 +18,8 @@ const io=new Server(server,{
     }
 
 });
+
+setIO(io);
 
 
 mongoose.connect(process.env.DB).then((e)=>console.log('MongoDb connected'));
@@ -48,8 +51,11 @@ async function startCleanup() {
     }
 }
 
-// startCleanup();
+startCleanup();
 initSocket(io,validateToken);
 app.use('/api/user',userRoute);
 app.use('/api/chat',checkAutherisation,chatRoute);
 server.listen(PORT,()=>console.log(`Server connected to ${PORT}`));
+module.exports={
+    io
+}

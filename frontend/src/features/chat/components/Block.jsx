@@ -59,7 +59,7 @@ function Block() {
                     conversationId:selectedConversationId,
                     senderId:userId,
                     receiverId:selectedUserId,
-                    message:"You blocked this user",
+                    message:message,
                     messageType:"text",
                     messageTime:time,
                     createdAt:new Date().toISOString(),

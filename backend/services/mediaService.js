@@ -38,10 +38,7 @@ async function deleteMedia(mediaId) {
     return await Media.findOneAndDelete({ mediaId });
 }
 async function findExpiredUploads(expiryTime) {
-    return await Media.find({
-        uploadStatus: "pending",
-        lastChunkAt: { $lt: expiryTime }
-    });
+   return  Media.find({ uploadStatus: "cancelled", lastChunkAt: { $exists: true, $ne: null, $lt: expiryTime } });
 }
 async function incrementUploadedChunks(mediaId, chunkIndex) {
     const media = await Media.findOneAndUpdate(

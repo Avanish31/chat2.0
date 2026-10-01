@@ -10,7 +10,7 @@ import { Controller } from 'react-hook-form';
 import { scheduleQueue } from './scheduler';
 import { getCacheStatus,updateCacheStatus } from './indexedDbServices';
 import { getSocket } from '../../../socket/socketClient';
-import { saveUploadAbortController } from './abortController';
+import { getUploadAbortController} from './abortController';
 const DEFAULT_CHUNK_SIZE=64*1024;
 export async function startupload(mediaId){
     const state = store.getState();
@@ -37,9 +37,10 @@ export async function startupload(mediaId){
     if(conversationType=="dm"){
         blocked=friends?.byId[selectedUserId]?.blockedYou ?? false;
     }
+    
     const socket=getSocket();
-    const controller=new AbortController();
-    saveUploadAbortController(mediaId,controller);
+    const controller=getUploadAbortController(mediaId);
+    
     store.dispatch(updateStatusUploadQueue({
         mediaId:mediaId,
         status:"uploading"
@@ -74,6 +75,7 @@ export async function startupload(mediaId){
 
     }catch(err){
         if(controller.signal.aborted){
+
            return;
         }
         else{

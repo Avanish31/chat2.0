@@ -1,12 +1,12 @@
 const MAX_FILES=10;
 const MAX_TOTAL_SIZE=250*1024*1024;
 const FILE_LIMITS={
-    image:10*1024*1024,
-    video:100*1024*1024,
-    audio:25*1024*1024,
-    document:100*1024*1024,
-    archive: 50 * 1024 * 1024,
-    unknown: 0 
+    image:20*1024*1024,
+    video:20*1024*1024,
+    audio:20*1024*1024,
+    document:20*1024*1024,
+    archive: 20* 1024 * 1024,
+    unknown: 20*1024*1024
 }
 export function getFileCategory(file) {
     const type = file.type || "";
@@ -189,6 +189,7 @@ export function validateMedia(files){
                 file,
                 errors:[err]
             })
+          
         }
         else{
             validFiles.push(file);
