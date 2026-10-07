@@ -106,11 +106,7 @@ function SendMedia() {
                 throw(err);
 
             }
-          const time = new Date().toLocaleTimeString([], {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                      }).toLowerCase();
+          const time = new Date();
           const tempId = crypto.randomUUID();
           dispatch(addMessages({
                   conversationId:conversationId,
@@ -118,7 +114,9 @@ function SendMedia() {
                   receiverId:receiverId,
                   message:id,
                   messageType:"media",
-                  messageTime:time,
+                  messageTime:time.toISOString(),
+                  sendTime:time.toISOString(),
+                  receiveTime:null,
                   createdAt:new Date().toISOString(),
                   status:false,
                   tempId:tempId,
@@ -166,6 +164,7 @@ function SendMedia() {
                 lastMessageStatus: false,
                 lastSenderId: senderId,
                 lastMessageTime: new Date().toISOString(),
+                lastMessageWaitStatus:true,
                 lastMessageId: tempId,
                 id: conversationId
             }));

@@ -20,6 +20,8 @@ function Chat() {
   const userData=useSelector(state=>state.auth.userData);
   const chatMeta=useSelector(state=>state.chat.chatMeta);
   const selectedMessagesDeletion=useSelector(state=>state.chat.selectedMessagesDeletion);
+  const mediaStore=useSelector(state=>state.media.MediaStore);
+  const messages=useSelector(state=>state.chat.messages);
   const userId=userData?.id;
   const cbyId=conversations.byId;
   const socket=getSocket();
@@ -65,14 +67,23 @@ function Chat() {
         selectedMessagesDeletion:selectedMessagesDeletion
     })
     console.log("deletebyMe");
+    
     selectedMessagesDeletion.forEach(id=>{
-      
+      let category=null;
+      messages.forEach((msg)=>{
+        console.log('better')
+        if(msg._id==id && msg.messageType=="media" ){
+            category=mediaStore.byId[msg.message].category;
+            
+        }
+      })
        for(const [cid,conv] of Object.entries(chatMeta)){
         console.log(cid+" "+selectedConversationId+" "+ conv.lastMessageId+" "+id);
                       if(cid===selectedConversationId && conv.lastMessageId===id){
                           dispatch(updateLastMessageDeleteForMe({
                             conversationId:cid,
-                            userId:userId
+                            userId:userId,
+                            category:category
                           }))
                           break;
                       }

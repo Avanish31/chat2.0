@@ -37,11 +37,7 @@ function Block() {
             })
             message="You unblocked this user"
         }
-        const time = new Date().toLocaleTimeString([], {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            }).toLowerCase();
+        const time = new Date();
             socket.emit('sendMessage',{
                 conversationId:selectedConversationId,
                 senderId:userId,
@@ -61,7 +57,9 @@ function Block() {
                     receiverId:selectedUserId,
                     message:message,
                     messageType:"text",
-                    messageTime:time,
+                    messageTime:time.toISOString(),
+                    sendTime:time.toISOString(),
+                    receiveTime:time.toISOString(),
                     createdAt:new Date().toISOString(),
                     status:false,
                     tempId:tempId,

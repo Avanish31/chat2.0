@@ -43,7 +43,7 @@ function SideBar() {
       if(lastMessage?.length>20){
         lastMessage=lastMessage?.slice(0,15)+".....";
       }
-
+    
     if(conversation?.type==="dm"){
       const participants=conversation.participants;
       console.log(participants);
@@ -59,6 +59,7 @@ function SideBar() {
         lastMessageStatus:conv.lastMessageStatus,
         lastSenderId:conv.lastSenderId,
         lastMessageTime:conv.lastMessageTime!=null?formatLastMessageTime(conv.lastMessageTime):conv.lastMessageTime,
+        lastMessageWaitStatus:conv?.lastMessageWaitStatus ?? false,
         id:friendsId,
         type:"dm",
         isTyping:conv.isTyping
@@ -73,6 +74,7 @@ function SideBar() {
           lastMessageStatus:conv.lastMessageStatus,
           lastSenderId:conv.lastSenderId,
           lastMessageTime:formatLastMessageTime(conv.lastMessageTime),
+          lastMessageWaitStatus:conv?.lastMessageWaitStatus ?? false,
           id:conv.id,
           type:"group",
           isTyping:conv.isTyping
@@ -106,6 +108,7 @@ function SideBar() {
       lastMessageStatus={conv.lastMessageStatus}
       lastSenderId={conv.lastSenderId}
       lastMessageTime={conv.lastMessageTime}
+      lastMessageWaitStatus={conv.lastMessageWaitStatus}
       type={conv.type}
       id={conv.id}
       key={conv.id}

@@ -32,6 +32,7 @@ export async function chatAuth(dispatch,navigate){
         unreadCount:conv.unreadCount,
         deletedUntil:conv.deletedUntil,
         lastMessageStatus:conv.lastMessageStatus,
+        lastMessageWaitStatus:conv.lastMessageWaitStatus,
         lastSenderId:conv.lastSenderId,
         isTyping:false
     }))

@@ -71,6 +71,7 @@ socket.on('conversationId',async(data)=>{
         lastMessageId:data.messageId,
         lastMessageTime:new Date().toISOString(),
         lastMessageStatus:false,
+        lastMessageWaitStatus:false,
         lastSenderId:userId,
         unreadCount:null,
         deletedUntil:null,
@@ -210,7 +211,7 @@ socket.on('messageReceived',async(data)=>{
         }));
     }
     console.log("messageReceived");
-   dispatch(updateLastMessageStatus({
+    dispatch(updateLastMessageStatus({
         conversationId:data.conversationId,
         intervals:data.intervals
     }));

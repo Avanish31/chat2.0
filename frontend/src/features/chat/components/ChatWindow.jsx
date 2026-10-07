@@ -5,10 +5,17 @@ import BlockedBubble from "./BlockedBubble";
 import { useSelector } from "react-redux";
 
 function ChatWindow() {
-  const messages = useSelector((state) => state.chat.messages);
+  let messages = useSelector((state) => state.chat.messages);
   const user = useSelector((state) => state.auth.userData);
  const bottomRef = useRef(null);
-
+  messages= messages.map((message) => ({
+    ...message,
+    messageTime: new Date(message.messageTime).toLocaleTimeString([], {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    }).toLowerCase()
+}));
 useLayoutEffect(() => {
   if (!messages.length) return;
 
@@ -79,6 +86,7 @@ useLayoutEffect(() => {
                 time={msg.messageTime}
                 id={msg?._id}
                 deletedForEveryOne={msg.deletedForEveryOne}
+                waitStatus={msg.receiveTime!=null?false:true}
               />
             );
           }

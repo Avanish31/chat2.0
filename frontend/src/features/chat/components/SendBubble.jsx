@@ -18,6 +18,7 @@ import PdfMedia from "./PdfMedia";
 import DocumentMedia from "./DocumentMedia";
 
 import axios from "axios";
+import PendingClock from "../../../assets/pending";
 
 function SendBubble({
     message,
@@ -25,9 +26,10 @@ function SendBubble({
     status,
     time,
     id,
-    deletedForEveryOne
+    deletedForEveryOne,
+    waitStatus=false
 }) {
-    
+    console.log("WAIT STATUS",waitStatus);
     const dispatch = useDispatch();
     const selectedMessagesDeletion = useSelector(
         state => state.chat.selectedMessagesDeletion
@@ -440,7 +442,9 @@ function SendBubble({
                         {time}
                     </span>
 
-                    {status ? (
+                    {waitStatus?
+                    <PendingClock/>
+                    :status ? (
                         <BlueTickIcon />
                     ) : (
                         <WhiteTickIcon />

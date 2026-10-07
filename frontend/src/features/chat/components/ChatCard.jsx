@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSelector,useDispatch } from 'react-redux'
 import { setMessages ,setSelectedUserId} from '../state/chat'
 import axios from 'axios'
-function ChatCard({name,profileImage,lastMessage=null,unreadCount=0 ,id=null,type,lastMessageStatus=null,lastSenderId=null,lastMessageTime=null,isTyping=false}) {
+function ChatCard({name,profileImage,lastMessage=null,unreadCount=0 ,id=null,type,lastMessageStatus=null,lastSenderId=null,lastMessageTime=null,isTyping=false,lastMessageWaitStatus}) {
   const navigate=useNavigate();
   const dispatch=useDispatch();
   const friends=useSelector(state=>state.chat.friends);
@@ -29,7 +29,7 @@ function ChatCard({name,profileImage,lastMessage=null,unreadCount=0 ,id=null,typ
     <p className='w-[80%]'>{name}</p>
     <p>{lastMessageTime!=null && lastMessageTime}</p>
     </div>
-    <Notification unreadCount={unreadCount} lastMessageStatus={lastMessageStatus} lastSenderId={lastSenderId} lastMessage={lastMessage} isTyping={isTyping}/>
+    <Notification unreadCount={unreadCount} lastMessageStatus={lastMessageStatus} lastSenderId={lastSenderId} lastMessage={lastMessage} isTyping={isTyping} lastMessageWaitStatus={lastMessageWaitStatus}/>
     </div>
     </div>
     

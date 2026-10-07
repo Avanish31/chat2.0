@@ -2,8 +2,9 @@ import React from 'react'
 import WhiteTickIcon from '../../../assets/whitetick'
 import BlueTickIcon from '../../../assets/bluetick';
 import { useSelector } from 'react-redux'
+import PendingClock from '../../../assets/pending';
 
-function Notification({unreadCount,lastMessage,lastSenderId,lastMessageStatus,isTyping}) {
+function Notification({unreadCount,lastMessage,lastSenderId,lastMessageStatus,isTyping,lastMessageWaitStatus}) {
   const user=useSelector(state=>state.auth.userData);
   const userId=user?.id
   const selectedUserId=useSelector(state=>state.chat.selectedUserId);
@@ -12,7 +13,7 @@ function Notification({unreadCount,lastMessage,lastSenderId,lastMessageStatus,is
   return (
     <div className='flex text-white items-center'>
       <div className='w-[90%] flex'>
-        {!blocked && isTyping?<p className="text-[#25D366] font-medium">typing...</p>:(<><div className=' flex items-center mr-[5px]'>{lastSenderId==userId?<>{lastMessageStatus==true?<BlueTickIcon/>:<WhiteTickIcon/>}</>:null}</div>
+        {!blocked && isTyping?<p className="text-[#25D366] font-medium">typing...</p>:(<><div className=' flex items-center mr-[5px]'>{lastSenderId==userId?<>{lastMessageWaitStatus?<PendingClock/>:lastMessageStatus==true?<BlueTickIcon/>:<WhiteTickIcon/>}</>:null}</div>
         {lastMessage && <p>{lastMessage}</p>}</>)}
       </div>
       {(unreadCount && unreadCount!=0)?

@@ -29,18 +29,16 @@ function SendMessage() {
         const participants=conversations[selectedUserId].participants;
         receiverId=participants.filter(id=>id!=senderId);
       }
-      const time = new Date().toLocaleTimeString([], {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      }).toLowerCase();
+      const time = new Date();
       dispatch(addMessages({
         conversationId:conversationId,
         senderId:senderId,
         receiverId:receiverId,
         message:message,
         messageType:"text",
-        messageTime:time,
+        messageTime:time.toISOString(),
+        sendTime:time.toISOString(),
+        receiveTime:time.toISOString(),
         createdAt:new Date().toISOString(),
         status:false,
         tempId:tempId,
@@ -75,6 +73,7 @@ function SendMessage() {
         lastMessageStatus:false,
         lastSenderId:senderId,
         lastMessageTime:new Date().toISOString(),
+        lastMessageWaitStatus:false,
         lastMessageId:tempId,
         id:conversationId
       }))

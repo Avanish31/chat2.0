@@ -1,4 +1,5 @@
 import {createSlice} from "@reduxjs/toolkit"
+
 import { act } from "react";
 
 const initialState={
@@ -53,6 +54,9 @@ const chatSlice=createSlice({
             state.chatMeta[action.payload.id].lastMessageStatus=action.payload.lastMessageStatus,
             state.chatMeta[action.payload.id].lastSenderId=action.payload.lastSenderId,
             state.chatMeta[action.payload.id].lastMessageId=action.payload.lastMessageId;
+            if(state.chatMeta[action.payload.id]?.lastMessageWaitStatus!=null && action.payload?.lastMessageWaitStatus!=null){
+                state.chatMeta[action.payload.id].lastMessageWaitStatus=action.payload?.lastMessageWaitStatus;
+            }
         },
         addChatMeta:(state,action)=>{
             state.chatMeta[action.payload.id]=action.payload;
@@ -118,13 +122,13 @@ const chatSlice=createSlice({
         updateMessageStatus:(state,action)=>{
             console.log("status fired");
             state.messages.forEach((msg)=>{
-                if(msg.senderId==action.payload.id){
+                if(msg.senderId==action.payload.id && msg.receiveTime!=null){
                     let blocked=false;
                      for(const interval of action.payload.intervals){
                         const end=interval.unblockedAt??new Date(8640000000000000);
                         console.log(interval.blockedAt+" "+end+" "+new Date(msg.createdAt));
 
-                        if(msg.createdAt>=interval.blockedAt && msg.createdAt<=end){
+                        if(msg.receiveTime>=interval.blockedAt && msg.receiveTime<=end){
                             console.log("bockeeeeeed");
                           blocked=true;
                           break;
@@ -151,10 +155,13 @@ const chatSlice=createSlice({
         updateLastMessageStatus:(state,action)=>{
             console.log("updateLastMessageStatus fired");
             let blocked=false;
-            const lastMessageTime=state.chatMeta[action.payload.conversationId].lastMessageTime;
+            const lastMessageId=state.chatMeta[action.payload.conversationId].lastMessageId;
+            console.log('last',lastMessageId);
+            const message=state.messages.find(msg=>(msg._id.toString()==lastMessageId.toString() || msg?.tempId==lastMessageId));
+            if(message?.receiveTime!=null){
             for(const interval of action.payload.intervals){
                 const end=interval.unblockedAt??new Date(8640000000000000);
-                    if(lastMessageTime>=interval.blockedAt && lastMessageTime<=end){
+                    if(message.receiveTime>=interval.blockedAt && message.receiveTime<=end){
                           blocked=true;
                           break;
                     }
@@ -165,6 +172,7 @@ const chatSlice=createSlice({
                 else{
                      state.chatMeta[action.payload.conversationId].lastMessageStatus=false;
                 }
+            }
             
             
         },
@@ -241,26 +249,42 @@ const chatSlice=createSlice({
             state.chatMeta[action.payload].lastMessage="This message was deleted";
         },
         updateLastMessageDeleteForMe:(state,action)=>{
+             console.log('jijutsu kaisen');
             let lastMessage=null;
             let lastMessageId=null;
             let lastMessageTime=null;
             let lastMessageStatus=null;
             let lastSenderId=null;
+            let lastMessageWaitStatus=null;
             state.messages.forEach((msg)=>{
                 if(!msg.deleteBy.includes(action.payload.userId)){
                     console.log("yessssssssss");
                     lastMessage=msg.message;
                     lastMessageId=msg._id;
                     lastMessageTime=msg.createdAt;
+                    lastMessageWaitStatus=msg.receiveTime==null?true:false;
                     lastSenderId=msg.senderId;
                     lastMessageStatus=msg.status;
+                    
                 }
             })
+            if(action.payload.category){
+               
+                if(lastSenderId==action.payload.userId){
+                    lastMessage=`${action.payload.category} sent`
+                }
+                else{
+                    lastMessage=`${action.payload.category} received`
+                }
+            }
             state.chatMeta[action.payload.conversationId].lastMessage=lastMessage;
             state.chatMeta[action.payload.conversationId].lastMessageId=lastMessageId;
             state.chatMeta[action.payload.conversationId].lastMessageTime=lastMessageTime;
             state.chatMeta[action.payload.conversationId].lastSenderId=lastSenderId;
             state.chatMeta[action.payload.conversationId].lastMessageStatus=lastMessageStatus;
+            if(state.chatMeta[action.payload.conversationId]?.lastMessageWaitStatus!=null && lastMessageWaitStatus!=null){
+                state.chatMeta[action.payload.conversationId].lastMessageWaitStatus=lastMessageWaitStatus
+            }
             console.log(lastMessage+" "+lastMessageId+" "+lastMessageTime+" "+lastSenderId+" "+lastMessageStatus);
             console.log(action.payload.userId+" "+action.payload.conversationId);
         },
@@ -272,6 +296,16 @@ const chatSlice=createSlice({
             console.log(action.payload.status+" "+action.payload.id);
             state.friends.byId[action.payload.id].blockedYou=action.payload.status;
             console.log(JSON.parse(JSON.stringify(state.friends)));
+        },
+        updateReceiveTimeMessage:(state,action)=>{
+            state.messages.forEach((msg)=>{
+                if(msg.message==action.payload.id){
+                    msg.receiveTime=action.payload.time
+                }
+            })
+        },
+        updateLastMessageWaitStatus:(state,action)=>{
+            state.chatMeta[action.payload.conversationId].lastMessageWaitStatus=action.payload.status
         }
         
 
@@ -285,6 +319,6 @@ setSelectedConversationType,updateMessageStatus,updateChatMeta,clearUnreadCount,
 updateMessageId,updateUserTyping,updateChatMetaTypingStatus,updateTotalNotificationCount,setTotalNotification,
 updateDeleteMode,updateDeleteMessageConfirmation,updateSelectedMessagesDeletion,removeSelectedMessagesDeletion,
 clearSelectedMessagesDeletion,updateDeleteForEveryOneEnabler,deleteMessageForMe,deleteMessageForEveryOne,updateLastMessageContent,
-updateLastMessageDeleteForMe,clearDeleteForEveryOneEnabler,updateYouBlockstatus,updateBlockedYoustatus
+updateLastMessageDeleteForMe,clearDeleteForEveryOneEnabler,updateYouBlockstatus,updateBlockedYoustatus,updateReceiveTimeMessage,updateLastMessageWaitStatus
 }=chatSlice.actions;
 export default chatSlice.reducer;

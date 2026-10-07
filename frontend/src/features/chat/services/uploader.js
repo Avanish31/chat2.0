@@ -4,6 +4,7 @@ import store from '../../../store';
 import { getVideoPreview } from './generatePreview';
 import { getMediaFile } from './indexedDbServices';
 import { updateStatusUploadQueue,updateBytesUploadQueue,setUploadedBytes} from '../state/media';
+import {updateLastMessageWaitStatus, updateReceiveTimeMessage} from '../state/chat';
 import { addLastMessage } from '../state/chat';
 import { useDispatch } from 'react-redux';
 import { Controller } from 'react-hook-form';
@@ -28,15 +29,8 @@ export async function startupload(mediaId){
         const participants=conversations[selectedUserId].participants;
         receiverId=participants.filter(id=>id!=senderId);
     }
-    const time = new Date().toLocaleTimeString([], {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-    }).toLowerCase();
-    let blocked=false;
-    if(conversationType=="dm"){
-        blocked=friends?.byId[selectedUserId]?.blockedYou ?? false;
-    }
+   
+    
     
     const socket=getSocket();
     const controller=getUploadAbortController(mediaId);
@@ -55,6 +49,18 @@ export async function startupload(mediaId){
     try{
         await uploadFile(mediaId,controller.signal);
         console.log("CONVERSSSATIONID",conversationId);
+        let blocked=false;
+        if(conversationType=="dm"){
+            const statec = store.getState();
+            const friendsc=statec.chat.friends
+            blocked=friendsc?.byId[selectedUserId]?.blockedYou ?? false;
+            console.log("BLOCKEDd ",friendsc?.byId[selectedUserId]);
+        }
+        const time = new Date();
+        store.dispatch(updateReceiveTimeMessage({
+            id:mediaId,
+            time:time.toISOString(),
+        }))
         socket.emit('sendMessage',{
             conversationId:conversationId,
             senderId:senderId,
@@ -67,11 +73,16 @@ export async function startupload(mediaId){
             blocked:blocked,
             dummy:false
         })
+        
         store.dispatch(updateStatusUploadQueue({
             mediaId:mediaId,
             status:"completed"
         }))
-        
+       
+        store.dispatch(updateLastMessageWaitStatus({
+            conversationId:conversationId,
+            status:false,
+        }))
 
     }catch(err){
         if(controller.signal.aborted){
