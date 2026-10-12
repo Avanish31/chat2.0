@@ -70,7 +70,8 @@ function initSocket(io, validateToken){
                     receiverId:data.receiverId,
                     message:data.message,
                     messageType:data.messageType,
-                    messageTime:data.messageTime,
+                    sendTime:data.messageTime,
+                    receiveTime:data.messageTime,
                     dummy:data.dummy,
                     visibility:conversation.participants
                  })
@@ -101,7 +102,8 @@ function initSocket(io, validateToken){
                     receiverId:data.receiverId,
                     message:data.message,
                     messageType:data.messageType,
-                    messageTime:data.messageTime,
+                    sendTime:data.messageTime,
+                    receiveTime:data.messageTime,
                     dummy:data.dummy,
                     visibility:conv.participants
             })
@@ -113,7 +115,12 @@ function initSocket(io, validateToken){
                 const tempMessage=await Message.findOneAndUpdate(
                     {senderId:data.senderId,message:data.message},
                     {
-                        visibility:conv.participants
+                        visibility:conv.participants,
+                        receiveTime:data.messageTime,
+                        
+                    },
+                    { new: true ,
+                    timestamps: false
                     }
                 )
                 message=tempMessage;
@@ -364,7 +371,7 @@ function initSocket(io, validateToken){
                     receiverId:data.receiverId,
                     message:data.message,
                     messageType:data.messageType,
-                    messageTime:data.messageTime,
+                    sendTime:data.messageTime,
                     dummy:data.dummy,
                     visibility:[data.senderId]
             })
@@ -382,19 +389,20 @@ function initSocket(io, validateToken){
                     receiverId:data.receiverId,
                     message:data.message,
                     messageType:data.messageType,
-                    messageTime:data.messageTime,
+                    sendTime:data.messageTime,
                     dummy:data.dummy,
                     visibility:[data.senderId]
             })
         }
+        console.log("TEMP ",data.tempId," ",message._id);
+        callback({
+            success: true
+        });
         socket.emit('messageSaved',{
                 tempId:data.tempId,
                 messageId:message._id,
                 convId:conversationId
         })
-        callback({
-            success: true
-        });
 
 
     })

@@ -12,6 +12,7 @@ import { getSocket } from '../../../socket/socketClient'
 import Snackbar from '../../../partials/SnackBar'
 import { updateMediaError } from '../state/media'
 import Viewer from './Viewer'
+import store from '../../../store'
 function Chat() {
   const dispatch=useDispatch();
   const navigate=useNavigate();
@@ -21,7 +22,6 @@ function Chat() {
   const chatMeta=useSelector(state=>state.chat.chatMeta);
   const selectedMessagesDeletion=useSelector(state=>state.chat.selectedMessagesDeletion);
   const mediaStore=useSelector(state=>state.media.MediaStore);
-  const messages=useSelector(state=>state.chat.messages);
   const userId=userData?.id;
   const cbyId=conversations.byId;
   const socket=getSocket();
@@ -50,6 +50,7 @@ function Chat() {
     }
     selectedMessagesDeletion.forEach(id=>{
        for(const [cid,conv] of Object.entries(chatMeta)){
+                      console.log('CONVT ',conv.lastMessageId," ",id);
                       if(cid===selectedConversationId && conv.lastMessageId===id){
                           dispatch(updateLastMessageContent(cid))
                           break;
@@ -69,20 +70,27 @@ function Chat() {
     console.log("deletebyMe");
     
     selectedMessagesDeletion.forEach(id=>{
-      let category=null;
-      messages.forEach((msg)=>{
-        console.log('better')
-        if(msg._id==id && msg.messageType=="media" ){
-            category=mediaStore.byId[msg.message].category;
-            
-        }
-      })
+      
        for(const [cid,conv] of Object.entries(chatMeta)){
-        console.log(cid+" "+selectedConversationId+" "+ conv.lastMessageId+" "+id);
+        console.log("CONVT ",cid+" "+selectedConversationId+" "+ conv.lastMessageId+" "+id);
                       if(cid===selectedConversationId && conv.lastMessageId===id){
+                        let tempMessage=null;
+                        let category=null;
+                        const messages=store.getState().chat.messages
+                        messages.forEach((msg)=>{
+                          if(!msg.deleteBy.includes(userId)){
+                              tempMessage=msg;
+                            }
+                        })
+                        if(tempMessage && tempMessage.messageType=="media"){
+                            console.log("haha ",tempMessage);
+                            category=mediaStore.byId[tempMessage.message].category;
+                        }
+                        mediaStore.byId[tempMessage._id]
                           dispatch(updateLastMessageDeleteForMe({
                             conversationId:cid,
                             userId:userId,
+                            msg:tempMessage,
                             category:category
                           }))
                           break;

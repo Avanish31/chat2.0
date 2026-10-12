@@ -22,9 +22,11 @@ const messageSchema=new Schema({
         type:String,
         required:true
     },
-    messageTime:{
-        type:String,
-        require:true
+    sendTime:{
+        type:Date,      
+    },
+    receiveTime:{
+        type:Date,
     },
     deleteBy:[
         {

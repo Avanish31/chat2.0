@@ -49,11 +49,13 @@ const chatSlice=createSlice({
              state.chatMeta=chatMeta;
         },
         addLastMessage:(state,action)=>{
+            console.log("last mesage ",action.payload.lastMessage);
             state.chatMeta[action.payload.id].lastMessage=action.payload.lastMessage
             state.chatMeta[action.payload.id].lastMessageTime=new Date().toISOString()
             state.chatMeta[action.payload.id].lastMessageStatus=action.payload.lastMessageStatus,
             state.chatMeta[action.payload.id].lastSenderId=action.payload.lastSenderId,
             state.chatMeta[action.payload.id].lastMessageId=action.payload.lastMessageId;
+            
             if(state.chatMeta[action.payload.id]?.lastMessageWaitStatus!=null && action.payload?.lastMessageWaitStatus!=null){
                 state.chatMeta[action.payload.id].lastMessageWaitStatus=action.payload?.lastMessageWaitStatus;
             }
@@ -180,10 +182,13 @@ const chatSlice=createSlice({
             console.log("message saved");
             const messages=state.messages.find(msg=>msg.tempId==action.payload.tempId);
             if(messages){
+                console.log("IWI-TAVOR",messages.tempId,"  " ,action.payload.tempId);
                 messages._id=action.payload.messageId
             }
             for(const [cid,conv] of Object.entries(state.chatMeta)){
+                console.log("HK-416 ",conv.lastMessageId," " ,action.payload.tempId);
                 if(conv.lastMessageId==action.payload.tempId){
+                    
                     state.chatMeta[cid].lastMessageId=action.payload.messageId;
                     break;
                 }
@@ -256,20 +261,32 @@ const chatSlice=createSlice({
             let lastMessageStatus=null;
             let lastSenderId=null;
             let lastMessageWaitStatus=null;
-            state.messages.forEach((msg)=>{
-                if(!msg.deleteBy.includes(action.payload.userId)){
-                    console.log("yessssssssss");
-                    lastMessage=msg.message;
-                    lastMessageId=msg._id;
-                    lastMessageTime=msg.createdAt;
-                    lastMessageWaitStatus=msg.receiveTime==null?true:false;
-                    lastSenderId=msg.senderId;
-                    lastMessageStatus=msg.status;
+            // state.messages.forEach((msg)=>{
+            //     if(!msg.deleteBy.includes(action.payload.userId)){
+            //         console.log("yessssssssss");
+            //         lastMessage=msg.message;
+            //         lastMessageId=msg._id;
+            //         lastMessageTime=msg.createdAt;
+            //         lastMessageWaitStatus=msg.receiveTime==null?true:false;
+            //         lastSenderId=msg.senderId;
+            //         lastMessageStatus=msg.status;
                     
-                }
-            })
-            if(action.payload.category){
-               
+            //     }
+            // })
+            const msg=action.payload.msg;
+            if(msg!=null){
+                lastMessage=msg.message;
+                lastMessageId=msg._id;
+                lastMessageTime=msg.createdAt;
+                lastMessageWaitStatus=msg.receiveTime==null?true:false;
+                lastSenderId=msg.senderId;
+                lastMessageStatus=msg.status;
+            }
+            console.log("MESSAGE CONTENT ",action.payload.category," ",lastMessage);
+            if(msg.deletedForEveryOne==true){
+                lastMessage='This message was deleted';
+            }
+            else if(action.payload.category!=null && lastMessageId!=null){
                 if(lastSenderId==action.payload.userId){
                     lastMessage=`${action.payload.category} sent`
                 }

@@ -15,7 +15,7 @@ async function InitialChatLoader(req,res){
         participants:req.user._id,
         conversationType:"dm",
         visibility:req.user._id
-    }).populate("participants","_id name email profileImage lastseen").sort({updatedAt:-1})
+    }).populate("participants","_id name email profileImage lastseen").sort({createdAt:-1})//
     const unreadMap={};
     const userId=req.user._id.toString();
     for(const chat of chats){
@@ -34,7 +34,7 @@ async function InitialChatLoader(req,res){
             }
             for(const interval of intervals){
                 const end=interval.unblockedAt??new Date(8640000000000000);
-                if(msg.createdAt>=interval.blockedAt && msg.createdAt<=end){
+                if(msg.receiveTime>=interval.blockedAt && msg.receiveTime<=end){
                     return false;
                 }
             }
@@ -66,7 +66,7 @@ async function InitialChatLoader(req,res){
     const chat2=await Conversation.find({
         participants:req.user._id,
         visibility:req.user._id
-    }).sort({updatedAt:-1})
+    }).sort({createdAt:-1})//
     const conversation= await Promise.all(
     chat2.map(async (chat) => {
     let lastMessageStatus=false;    
@@ -84,7 +84,7 @@ async function InitialChatLoader(req,res){
             }
             for(const interval of intervals){
                 const end=interval.unblockedAt??new Date(8640000000000000);
-                if(msg.createdAt>=interval.blockedAt && msg.createdAt<=end){
+                if(msg.receiveTime>=interval.blockedAt && msg.receiveTime<=end){
                     return false;
                 }
             }
@@ -94,13 +94,14 @@ async function InitialChatLoader(req,res){
     msg => !msg.deleteBy.some(id => id.equals(userId)));
         intervals=chat.blocked.filter(b=>b.blockedBy.equals(otherId) && b.blockedUser.equals(userId));
         let blocked = false;
-            if(lastMessage){
+            if(lastMessage ){
+                
             for (const interval of intervals) {
                 const end = interval.unblockedAt ?? new Date(8640000000000000);
 
                 if (
-                    lastMessage.createdAt >= interval.blockedAt &&
-                    lastMessage.createdAt <= end
+                    lastMessage.receiveTime >= interval.blockedAt &&
+                    lastMessage.receiveTime <= end
                 ) {
                     blocked = true;
                     break;
@@ -113,12 +114,12 @@ async function InitialChatLoader(req,res){
      lastMessage=await Message.findOne({
         conversationId:chat._id,
         deleteBy: { $nin: [userId] },
-         visibility:req.user._id
+        visibility:req.user._id
     }).sort({createdAt:-1});
     }   
     console.log("lastMessageStatus "+lastMessageStatus);
-    let shownMessage=lastMessage.message;
-    if(lastMessage.messageType=="media"){
+    let shownMessage=lastMessage?.message??null;
+    if(shownMessage && lastMessage?.messageType=="media"){
         const media=await Media.findOne({mediaId:lastMessage.message});
         if(lastMessage.senderId==req.user._id){
             shownMessage=`${media?.category} sent `;
@@ -134,6 +135,7 @@ async function InitialChatLoader(req,res){
       lastMessageId:lastMessage?._id,
       lastMessageTime: lastMessage?.createdAt??null,
       lastMessageStatus:lastMessageStatus,
+      lastMessageWaitStatus:lastMessage?.receiveTime==null,
       lastSenderId:lastMessage?.senderId,
       unreadCount: unreadMap[chat._id.toString()] || 0,
       deletedUntil: chat.deletedUntil?.get(userId),
@@ -178,11 +180,12 @@ async function messageHandler(req,res){
     const token=req.cookies?.token;
     const data=validateToken(token);
     const userId=data._id
-    let messages=await Message.find({conversationId:convId, visibility:req.user._id}).sort({ createdAt: 1 });
+    let messages=await Message.find({conversationId:convId, visibility:req.user._id}).sort({createdAt:-1});
     const conversation=await Conversation.findById(convId);
     const lastSeenMessage=conversation?.lastSeenMessage;
     const { id, type } = req.query;
     let intervals=conversation.blocked.filter(b=>b.blockedBy.equals(userId) && b.blockedUser.equals(id));
+
     if(messages.length!=0 && type=="dm"){
         messages=messages.filter(msg=>{
             if(msg.senderId.equals(userId)){
@@ -190,7 +193,7 @@ async function messageHandler(req,res){
             }
             for(const interval of intervals){
                 const end=interval.unblockedAt??new Date(8640000000000000);
-                if(msg.createdAt>=interval.blockedAt && msg.createdAt<=end){
+                if(msg.receiveTime>=interval.blockedAt && msg.receiveTime<=end){
                     return false;
                 }
             }
@@ -212,8 +215,8 @@ async function messageHandler(req,res){
                 const end = interval.unblockedAt ?? new Date(8640000000000000);
 
                 if (
-                    msg.createdAt >= interval.blockedAt &&
-                    msg.createdAt <= end
+                    msg.receiveTime >= interval.blockedAt &&
+                    msg.receiveTime <= end
                 ) {
                     blocked = true;
                     break;
@@ -231,6 +234,19 @@ async function messageHandler(req,res){
     // messages.forEach((msg)=>{
     //     console.log(msg.message+" "+msg.status+" "+msg.createdAt);
     // })
+    messages = messages.map(message => {
+    const messageTime =
+        message.senderId.toString() === req.user._id.toString()
+            ? message.sendTime
+            : message.receiveTime;
+
+    return {
+        ...message,
+        messageTime
+    };
+});
+messages.sort((a, b) => a.messageTime - b.messageTime);
+console.log("MESSAGE",messages);
     res.status(200).json({
         messages:messages
     })
@@ -283,7 +299,7 @@ async function notificationHandler(req,res){
             }
             for(const interval of intervals){
                 const end=interval.unblockedAt??new Date(8640000000000000);
-                if(msg.createdAt>=interval.blockedAt && msg.createdAt<=end){
+                if(msg.receiveTime>=interval.blockedAt && msg.receiveTime<=end){
                     return false;
                 }
             }
