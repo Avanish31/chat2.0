@@ -35,7 +35,7 @@ function SendBubble({
         state => state.chat.selectedMessagesDeletion
     );
 
-    const deleteMode = useSelector(
+    let deleteMode = useSelector(
         state => state.chat.deleteMode
     );
 
@@ -411,8 +411,12 @@ function SendBubble({
 
         content = message;
     }
+    if(messageType=="media"){
+        if(uploadItem && (uploadItem.status=="pending" ||  uploadItem.status=="uploading")){
+            deleteMode=false;
+        }
+    }
 
-   
 
     return (
         <div

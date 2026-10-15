@@ -23,7 +23,7 @@ function RecieveBubble({
     const selectedMessagesDeletion = useSelector(
         state => state.chat.selectedMessagesDeletion
     );
-    const deleteMode = useSelector(
+    let deleteMode = useSelector(
         state => state.chat.deleteMode
     );
     const mediaStore = useSelector(
@@ -439,9 +439,12 @@ function RecieveBubble({
 
         content = message;
     }
-
-
     
+    if(messageType=="media"){
+        if(downloadItem && (downloadItem.status=="pending" || downloadItem.status=="downloading")){
+            deleteMode=false;
+        }
+    }
 
     return (
         <div
