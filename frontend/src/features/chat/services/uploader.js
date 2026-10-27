@@ -13,25 +13,30 @@ import { getCacheStatus,updateCacheStatus } from './indexedDbServices';
 import { getSocket } from '../../../socket/socketClient';
 import { getUploadAbortController} from './abortController';
 const DEFAULT_CHUNK_SIZE=64*1024;
-export async function startupload(mediaId){
+export async function startupload(mediaId,conversationsId=null,conversationsType=null){
     const state = store.getState();
-    const conversationId=state.chat.selectedConversationId;
+    let conversationId=state.chat.selectedConversationId;
+    if(conversationsId){
+        conversationId=conversationsId;
+    }
     const userData=state.auth.userData;
     const senderId=userData?.id;
     const selectedUserId=state.chat.selectedUserId;
-    const conversationType=state.chat.selectedConversationType
+    let conversationType=state.chat.selectedConversationType;
+    if(conversationsType){
+        conversationType=conversationsType
+    }
+    console.log("convvId",conversationId)
     const conversations=state.chat.conversations;
     const mediaStore=state.media.MediaStore;
     const friends=state.chat.friends
     let receiverId=[selectedUserId];
     let tempId =null;
-    if(conversations[selectedUserId]){
-        const participants=conversations[selectedUserId].participants;
-        receiverId=participants.filter(id=>id!=senderId);
+    if(conversations.byId[conversationId]){
+            const participants=conversations.byId[conversationId]?.participants;
+            receiverId=participants.filter(id=>id!=senderId);
     }
-   
-    
-    
+    console.log("Recievers ",receiverId);
     const socket=getSocket();
     const controller=getUploadAbortController(mediaId);
     
@@ -53,8 +58,8 @@ export async function startupload(mediaId){
         if(conversationType=="dm"){
             const statec = store.getState();
             const friendsc=statec.chat.friends
-            blocked=friendsc?.byId[selectedUserId]?.blockedYou ?? false;
-            console.log("BLOCKEDd ",friendsc?.byId[selectedUserId]);
+            blocked=friendsc?.byId[receiverId[0]]?.blockedYou ?? false;
+            console.log("BLOCKEDd ",friendsc?.byId[receiverId[0]]);
         }
         const time = new Date();
         store.dispatch(updateReceiveTimeMessage({

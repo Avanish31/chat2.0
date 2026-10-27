@@ -28,10 +28,8 @@ function Chat() {
   const mediaError=useSelector(state=>state.media.mediaError);
   useEffect(()=>{
     chatAuth(dispatch,navigate);
-    
     return () => {
       dispatch(setSelectedUserId(null));
-      
     };
   },[dispatch])
   const deleteMessageConfirmation=useSelector(state=>state.chat.deleteMessageConfirmation);
@@ -76,9 +74,21 @@ function Chat() {
                       if(cid===selectedConversationId && conv.lastMessageId===id){
                         let tempMessage=null;
                         let category=null;
-                        const messages=store.getState().chat.messages
+                        let messages=store.getState().chat.messages
+                         messages = messages.map(msg => {
+                            const messageTime =
+                                msg.senderId.toString() === userId.toString()
+                                    ? msg.sendTime
+                                    : msg.receiveTime;
+
+                            return {
+                              ...msg,
+                                messageTime
+                            };
+                        });
+                        messages.sort((a, b) => a.messageTime - b.messageTime);
                         messages.forEach((msg)=>{
-                          if(!msg.deleteBy.includes(userId)){
+                          if(!msg.deleteBy.includes(userId) && msg.dummy==false){
                               tempMessage=msg;
                             }
                         })
@@ -86,7 +96,7 @@ function Chat() {
                             console.log("haha ",tempMessage);
                             category=mediaStore.byId[tempMessage.message].category;
                         }
-                        mediaStore.byId[tempMessage._id]
+                          console.log("tmpMessge",tempMessage);
                           dispatch(updateLastMessageDeleteForMe({
                             conversationId:cid,
                             userId:userId,

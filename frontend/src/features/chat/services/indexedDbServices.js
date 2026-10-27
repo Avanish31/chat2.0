@@ -310,6 +310,7 @@ export const clearAll = async (storeName) => {
     });
 };
 const CACHE_EXPIRY = 7 * 24 * 60 * 60 * 1000;
+// const CACHE_EXPIRY = 30 * 1000;
 export const cleanupOldFiles = async (storeName) => {
     const db = await openDB();
 

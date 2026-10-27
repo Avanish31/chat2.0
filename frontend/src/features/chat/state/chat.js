@@ -24,6 +24,10 @@ const initialState={
     deleteMessageConfirmation:false,
     selectedMessagesDeletion:[],
     deleteForEveryOneEnabler:0,
+    forwardMode:false,
+    forwardConversationSelectionMode:false,
+    forwardSelectedMessages:[],
+    forwardSelectedConversations:[]
     // onlineUsers:[]
 }
 const chatSlice=createSlice({
@@ -155,15 +159,15 @@ const chatSlice=createSlice({
             state.chatMeta[action.payload].unreadCount=0
         },
         updateLastMessageStatus:(state,action)=>{
-            console.log("updateLastMessageStatus fired");
+            console.log("updateLastMessageStatus fired",action.payload.conversationId);
             let blocked=false;
             const lastMessageId=state.chatMeta[action.payload.conversationId].lastMessageId;
             console.log('last',lastMessageId);
-            const message=state.messages.find(msg=>(msg._id.toString()==lastMessageId.toString() || msg?.tempId==lastMessageId));
-            if(message?.receiveTime!=null){
+            const message=state.messages.find(msg=>(msg._id.toString()==lastMessageId || msg?.tempId==lastMessageId));
+            if(action.payload?.lastMessageRecieveTime!=null){
             for(const interval of action.payload.intervals){
                 const end=interval.unblockedAt??new Date(8640000000000000);
-                    if(message.receiveTime>=interval.blockedAt && message.receiveTime<=end){
+                    if(action.payload.lastMessageRecieveTime>=interval.blockedAt && action.payload?.lastMessageRecieveTime<=end){
                           blocked=true;
                           break;
                     }
@@ -172,6 +176,7 @@ const chatSlice=createSlice({
                     state.chatMeta[action.payload.conversationId].lastMessageStatus=true;
                 }
                 else{
+                    
                      state.chatMeta[action.payload.conversationId].lastMessageStatus=false;
                 }
             }
@@ -188,9 +193,7 @@ const chatSlice=createSlice({
             for(const [cid,conv] of Object.entries(state.chatMeta)){
                 console.log("HK-416 ",conv.lastMessageId," " ,action.payload.tempId);
                 if(conv.lastMessageId==action.payload.tempId){
-                    
                     state.chatMeta[cid].lastMessageId=action.payload.messageId;
-                    break;
                 }
             }
             state.messages.forEach(msg=>{
@@ -254,7 +257,7 @@ const chatSlice=createSlice({
             state.chatMeta[action.payload].lastMessage="This message was deleted";
         },
         updateLastMessageDeleteForMe:(state,action)=>{
-             console.log('jijutsu kaisen');
+            console.log('jijutsu kaisen');
             let lastMessage=null;
             let lastMessageId=null;
             let lastMessageTime=null;
@@ -283,7 +286,7 @@ const chatSlice=createSlice({
                 lastMessageStatus=msg.status;
             }
             console.log("MESSAGE CONTENT ",action.payload.category," ",lastMessage);
-            if(msg.deletedForEveryOne==true){
+            if(msg && msg.deletedForEveryOne==true){
                 lastMessage='This message was deleted';
             }
             else if(action.payload.category!=null && lastMessageId!=null){
@@ -323,8 +326,36 @@ const chatSlice=createSlice({
         },
         updateLastMessageWaitStatus:(state,action)=>{
             state.chatMeta[action.payload.conversationId].lastMessageWaitStatus=action.payload.status
+            
+        },
+        addSelectedForwardMessages:(state,action)=>{
+            state.forwardSelectedMessages.push(action.payload);
+            console.log("addSelectedForwardMessages ",JSON.parse(JSON.stringify(state.forwardSelectedMessages)));
+
+        },
+        addSelectedForwardConversations:(state,action)=>{
+            state.forwardSelectedConversations.push(action.payload);
+            console.log("addSelectedForwardConversations ",JSON.parse(JSON.stringify( state.forwardSelectedConversations)));
+        },
+        removeSelectedForwardMessages:(state,action)=>{
+            state.forwardSelectedMessages=state.forwardSelectedMessages.filter(id=>id!==action.payload);
+        },
+        clearSelectedForwardMessages:(state,action)=>{
+            console.log("clearSelectedForwardMessages")
+            state.forwardSelectedMessages=[];
+        },
+        removeSelectedForwardConversations:(state,action)=>{
+            state.forwardSelectedConversations=state.forwardSelectedConversations.filter(id=>id!==action.payload);
+        },
+        clearSelectedForwardConversations:(state,action)=>{
+            state.forwardSelectedConversations=[];
+        },
+        updateForwardMode:(state,action)=>{
+            state.forwardMode=action.payload;
+        },
+        updateForwardConversationSelectionMode:(state,action)=>{
+            state.forwardConversationSelectionMode=action.payload;
         }
-        
 
        
     }
@@ -336,6 +367,8 @@ setSelectedConversationType,updateMessageStatus,updateChatMeta,clearUnreadCount,
 updateMessageId,updateUserTyping,updateChatMetaTypingStatus,updateTotalNotificationCount,setTotalNotification,
 updateDeleteMode,updateDeleteMessageConfirmation,updateSelectedMessagesDeletion,removeSelectedMessagesDeletion,
 clearSelectedMessagesDeletion,updateDeleteForEveryOneEnabler,deleteMessageForMe,deleteMessageForEveryOne,updateLastMessageContent,
-updateLastMessageDeleteForMe,clearDeleteForEveryOneEnabler,updateYouBlockstatus,updateBlockedYoustatus,updateReceiveTimeMessage,updateLastMessageWaitStatus
+updateLastMessageDeleteForMe,clearDeleteForEveryOneEnabler,updateYouBlockstatus,updateBlockedYoustatus,updateReceiveTimeMessage,updateLastMessageWaitStatus,
+addSelectedForwardMessages,addSelectedForwardConversations,removeSelectedForwardMessages,clearSelectedForwardMessages,removeSelectedForwardConversations,
+clearSelectedForwardConversations,updateForwardMode,updateForwardConversationSelectionMode
 }=chatSlice.actions;
 export default chatSlice.reducer;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
     updateSelectedMessagesDeletion,
@@ -13,6 +13,7 @@ import VideoComponent from "./VideoComponent";
 import DocumentMedia from "./DocumentMedia";
 import AudioMedia from "./AudioMedia";
 import { updateMediaError } from "../state/media";
+import { addSelectedForwardMessages,removeSelectedForwardMessages,updateForwardMode } from "../state/chat";
 function RecieveBubble({
     message,
     messageType,
@@ -36,6 +37,8 @@ function RecieveBubble({
     const [mediaFile, setMediaFile] = useState(null);
     const [uiState, setUiState] = useState(null);
     const mediaId = message;
+    const forwardSelectedMessages=useSelector(state=>state.chat.forwardSelectedMessages);
+    const forwardChecked=forwardSelectedMessages.includes(id);
     const checked =selectedMessagesDeletion.includes(id);
     const handleToggle = () => {
         if (!deleteMode) {
@@ -445,12 +448,92 @@ function RecieveBubble({
             deleteMode=false;
         }
     }
+    const forwardMode=useSelector(state=>state.chat.forwardMode);
+    const [contextMenu, setContextMenu] = useState(null);
+        const menuRef = useRef(null);
+        let enabled=true;
+       
+        if(messageType=="media"){
+            
+            if(uiState && uiState.type=="completed" && uiState.available==true ){
+                enabled=true;
+               
+            }
+            else{
+               enabled=false;
+            }
+        }
+        if(deletedForEveryOne==true){
+            enabled=false;
+        }
+        const menuOptions = [
+            {
+                label: "React",
+                onClick: () => console.log("Reply clicked"),
+                enabled:enabled
+            },
+            {
+                label: "Forward",
+                onClick: () => {
+                                dispatch(updateForwardMode(true));
+                            },
+                enabled:enabled
+            },
+        ];
+    
+        const handleContextMenu = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+    
+            setContextMenu({
+                x: e.clientX,
+                y: e.clientY,
+            });
+        };
+        useEffect(() => {
+            if (!contextMenu) return;
+    
+            const handleOutsideClick = (e) => {
+                if (
+                    menuRef.current &&
+                    !menuRef.current.contains(e.target)
+                ) {
+                    setContextMenu(null);
+                }
+            };
+    
+            const handleEscape = (e) => {
+                if (e.key === "Escape") {
+                    setContextMenu(null);
+                }
+            };
+    
+            document.addEventListener("mousedown", handleOutsideClick);
+            document.addEventListener("keydown", handleEscape);
+    
+            return () => {
+                document.removeEventListener("mousedown", handleOutsideClick);
+                document.removeEventListener("keydown", handleEscape);
+            };
+        }, [contextMenu]);
+        const handleForward=()=>{
+                if(!forwardMode){
+                    return;
+                }
+                const newChecked=!forwardChecked;
+                if(newChecked){
+                    dispatch(addSelectedForwardMessages(id));
+                }
+                else{
+                    dispatch(removeSelectedForwardMessages(id));
+                }
+        }
 
     return (
         <div
-            className={`w-full flex justify-between mt-2 mb-2 ml-4 items-center relative ${
-                deleteMode
-                    ? checked
+            className={`w-full flex justify-between mt-2 mb-2  items-center relative ${
+               deleteMode || (forwardMode && enabled)
+                    ? (deleteMode ? checked : forwardChecked)
                         ? "bg-[rgba(61,59,59,0.4)]"
                         : "hover:bg-[rgba(61,59,59,0.4)]"
                     : ""
@@ -458,11 +541,13 @@ function RecieveBubble({
             onClick={
                 deleteMode
                     ? handleToggle
-                    : undefined
+                    : (forwardMode && enabled)
+                        ? handleForward
+                        : undefined
             }
         >
 
-            <div className="p-1 mr-1 min-w-[50px] max-w-[50%] rounded-[10px] flex flex-wrap break-all justify-center bg-blue-600">
+            <div  onContextMenu={handleContextMenu} className="p-1 mr-1 min-w-[50px] max-w-[50%] rounded-[10px] flex flex-wrap break-all justify-center bg-blue-600">
 
                 {content}
 
@@ -490,18 +575,58 @@ function RecieveBubble({
 </button>}
 
 
-            {deleteMode && (
+            {(deleteMode || forwardMode && enabled) && (
                 <input
                     type="checkbox"
-                    checked={checked}
-                    onChange={handleToggle}
+                    checked={deleteMode ? checked : forwardChecked}
+                    onChange={deleteMode ? handleToggle : handleForward}
                     onClick={(e) =>
                         e.stopPropagation()
                     }
-                    className="mr-4 h-4 w-4 rounded-md"
+                    className="h-4 w-4 rounded-md ml-3"
                 />
             )}
+            {contextMenu && (
+    <div
+        ref={menuRef}
+        onContextMenu={(e) => e.preventDefault()}
+        className="fixed z-[9999]  gap-2 rounded-md min-w-40 flex flex-col justify-center  bg-[#262727] py-1 shadow-xl"
+        style={{
+            left: Math.min(
+                contextMenu.x,
+                window.innerWidth - (menuRef.current?.offsetWidth || 160) - 8
+            ),
+            top: Math.min(
+                contextMenu.y,
+                window.innerHeight - (menuRef.current?.offsetHeight || 160) - 8
+            ),
+        }}
+    >
+        {menuOptions.map((option) => (
+            <button
+                key={option.label}
+                type="button"
+                disabled={!option.enabled}
+                onClick={(e) => {
+                    e.stopPropagation();
 
+                    if (!option.enabled) return;
+
+                    setContextMenu(null);
+                    option.onClick();
+                }}
+                className={`block w-full px-4 py-2 text-left text-m
+                    ${
+                        option.enabled
+                            ? "text-white hover:bg-[rgb(61,59,59)] cursor-pointer"
+                            : "text-gray-500 opacity-50 cursor-not-allowed"
+                    }`}
+            >
+                {option.label}
+            </button>
+        ))}
+    </div>
+)}
         </div>
     );
 }

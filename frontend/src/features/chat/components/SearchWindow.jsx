@@ -12,6 +12,7 @@ function SearchWindow({onFocus,query,setQuery}) {
   const cbyIds=conversations.byId;
   const callIds=conversations.allIds;
   const chatMeta=useSelector(state=>state.chat.chatMeta);
+  const forwardConversationSelectionMode=useSelector(state=>state.chat.forwardConversationSelectionMode);
   const dispatch=useDispatch();
   const handleSearch=async (query)=>{
      const foundFId=fallIds.find(id=>fbyIds[id].email===query);
@@ -69,6 +70,7 @@ function SearchWindow({onFocus,query,setQuery}) {
     
     <input type='text' className='w-[90%] bg-gray-600 outline-none
         focus:outline-none'
+        disabled={forwardConversationSelectionMode}
         onFocus={onFocus}
         value={query}
         onChange={(e)=>setQuery(e.target.value)}

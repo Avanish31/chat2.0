@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useRef } from "react";
 import BlueTickIcon from "../../../assets/bluetick";
 import WhiteTickIcon from "../../../assets/whitetick";
-
+import { getCacheStatus } from "../services/indexedDbServices";
 import { useSelector, useDispatch } from "react-redux";
 import {
     updateSelectedMessagesDeletion,
     removeSelectedMessagesDeletion,
-    updateDeleteForEveryOneEnabler
+    updateDeleteForEveryOneEnabler,
+    updateForwardMode
 } from "../state/chat";
 import { updateMediaError } from "../state/media";
 import { getMediaUiState } from "../services/getMediaUiState";
@@ -19,7 +20,8 @@ import DocumentMedia from "./DocumentMedia";
 
 import axios from "axios";
 import PendingClock from "../../../assets/pending";
-
+import { Medal } from "lucide-react";
+import { addSelectedForwardMessages,removeSelectedForwardMessages } from "../state/chat"; 
 function SendBubble({
     message,
     messageType,
@@ -57,9 +59,9 @@ function SendBubble({
     
 
     const mediaId = message;
-
+    const forwardSelectedMessages=useSelector(state=>state.chat.forwardSelectedMessages);
     const checked = selectedMessagesDeletion.includes(id);
-
+    const forwardChecked=forwardSelectedMessages.includes(id);
     const uploadItem = uploadedQueue.byId[mediaId];
     const errorBubbleStatus=false;
    
@@ -95,7 +97,7 @@ function SendBubble({
 
     useEffect(() => {
 
-        if (messageType !== "media") {
+        if (messageType !== "media" || deletedForEveryOne) {
             return;
         }
 
@@ -150,6 +152,7 @@ function SendBubble({
         };
 
     }, [mediaId, messageType, uploadItem]);
+    
 
     const uploadedBytes =
         uploadItem?.uploadedBytes ??
@@ -416,13 +419,90 @@ function SendBubble({
             deleteMode=false;
         }
     }
+    const forwardMode=useSelector(state=>state.chat.forwardMode);
+    const [contextMenu, setContextMenu] = useState(null);
+    const menuRef = useRef(null);
+    let enabled=true;
+   
+    if(messageType=="media"){
+        if(uiState && uiState.type=="completed" && uiState.available==true ){
+            enabled=true;
+           
+        }
+        else{
+           enabled=false;
+        }
+    }
+    if(deletedForEveryOne==true){
+        enabled=false;
+    }
+    const menuOptions = [
+        {
+            label: "React",
+            onClick: () =>console.log("hehe"),
+            enabled:enabled
+        },
+        {
+            label: "Forward",
+            onClick: () => {
+                dispatch(updateForwardMode(true));
+            },
+            enabled:enabled
+        },
+    ];
 
+    const handleContextMenu = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
 
+        setContextMenu({
+            x: e.clientX,
+            y: e.clientY,
+        });
+    };
+    useEffect(() => {
+        if (!contextMenu) return;
+
+        const handleOutsideClick = (e) => {
+            if (
+                menuRef.current &&
+                !menuRef.current.contains(e.target)
+            ) {
+                setContextMenu(null);
+            }
+        };
+
+        const handleEscape = (e) => {
+            if (e.key === "Escape") {
+                setContextMenu(null);
+            }
+        };
+
+        document.addEventListener("mousedown", handleOutsideClick);
+        document.addEventListener("keydown", handleEscape);
+
+        return () => {
+            document.removeEventListener("mousedown", handleOutsideClick);
+            document.removeEventListener("keydown", handleEscape);
+        };
+    }, [contextMenu]);
+    const handleForward=()=>{
+        if(!forwardMode){
+            return;
+        }
+        const newChecked=!forwardChecked;
+        if(newChecked){
+            dispatch(addSelectedForwardMessages(id));
+        }
+        else{
+            dispatch(removeSelectedForwardMessages(id));
+        }
+    }
     return (
-        <div
-            className={`w-full flex flex-row-reverse justify-between mb-2 mt-2 items-center relative${
-                deleteMode
-                    ? checked
+       <div
+            className={`w-full flex flex-row-reverse justify-between mb-2 mt-2 items-center relative ${
+                deleteMode || (forwardMode && enabled)
+                    ? (deleteMode ? checked : forwardChecked)
                         ? "bg-[rgba(61,59,59,0.4)]"
                         : "hover:bg-[rgba(61,59,59,0.4)]"
                     : ""
@@ -430,11 +510,13 @@ function SendBubble({
             onClick={
                 deleteMode
                     ? handleToggle
-                    : undefined
+                    : (forwardMode && enabled)
+                        ? handleForward
+                        : undefined
             }
         >
 
-           <div className="p-1 mr-4 min-w-[50px] max-w-[50%] rounded-[10px] bg-gray-600 break-all overflow-hidden">
+           <div  onContextMenu={handleContextMenu} className="p-1 mr-4 min-w-[50px] max-w-[50%] rounded-[10px] bg-gray-600 break-all overflow-hidden">
 
                 <div>
                     {content}
@@ -471,18 +553,59 @@ function SendBubble({
     !
 </button>}
 
-            {deleteMode && (
+            {(deleteMode || forwardMode && enabled) && (
                 <input
                     type="checkbox"
-                    checked={checked}
-                    onChange={handleToggle}
+                    checked={deleteMode ? checked : forwardChecked}
+                    onChange={deleteMode ? handleToggle : handleForward}
                     onClick={(e) =>
                         e.stopPropagation()
                     }
                     className="h-4 w-4 rounded-md ml-3"
                 />
             )}
+            
+        {contextMenu && (
+    <div
+        ref={menuRef}
+        onContextMenu={(e) => e.preventDefault()}
+        className="fixed z-[9999]  gap-2 rounded-md min-w-40 flex flex-col justify-center  bg-[#262727] py-1 shadow-xl"
+        style={{
+            left: Math.min(
+                contextMenu.x,
+                window.innerWidth - (menuRef.current?.offsetWidth || 160) - 8
+            ),
+            top: Math.min(
+                contextMenu.y,
+                window.innerHeight - (menuRef.current?.offsetHeight || 160) - 8
+            ),
+        }}
+    >
+        {menuOptions.map((option) => (
+            <button
+                key={option.label}
+                type="button"
+                disabled={!option.enabled}
+                onClick={(e) => {
+                    e.stopPropagation();
 
+                    if (!option.enabled) return;
+
+                    setContextMenu(null);
+                    option.onClick();
+                }}
+                className={`block w-full px-4 py-2 text-left text-m
+                    ${
+                        option.enabled
+                            ? "text-white hover:bg-[rgb(61,59,59)] cursor-pointer"
+                            : "text-gray-500 opacity-50 cursor-not-allowed"
+                    }`}
+            >
+                {option.label}
+            </button>
+        ))}
+    </div>
+)}
         </div>
     );
 }

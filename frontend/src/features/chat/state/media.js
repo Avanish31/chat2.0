@@ -165,11 +165,14 @@ const mediaSlice=createSlice({
         updateShowMediaFull:(state,action)=>{
             state.showMediaFull.active=action.payload.active;
             state.showMediaFull.mediaId=action.payload.mediaId;
+        },
+        clearShowError:(state,action)=>{
+            state.showError=null;
         }
     }
 })
 export const{setPreviewMode,setShowError,setSelectedMedia,setSelectedPreview,removeSelectedMedia,updateCaption,
     clearSelectedMedia,setUploadQueue,updateStatusUploadQueue,updateBytesUploadQueue,setAbortController,
     setMediaStore,setDownloadQueue,updateStatusDownloadQueue,setAbortControllerDownload,updateBytesDownloadQueue,setUploadedBytes,setDownloadedBytes,
-addDownloadQueue,addUploadQueue,addMediaStore,updateMediaError,updateShowMediaFull}=mediaSlice.actions;
+addDownloadQueue,addUploadQueue,addMediaStore,updateMediaError,updateShowMediaFull,clearShowError}=mediaSlice.actions;
 export default mediaSlice.reducer;

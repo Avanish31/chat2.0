@@ -51,9 +51,16 @@ socket.on('conversationId',async(data)=>{
     const userId=user.id;
     dispatch(setSelectedConversationId(data.conversationId));
     let lastMessage=data.message;
-      if(lastMessage.length>20){
+    let mediaDetails=null;
+     if(lastMessage.length>20 && data.messageType=="text"){
         lastMessage=lastMessage.slice(0,15)+".....";
-      }
+    }
+    else if(data.messageType=="media"){
+        console.log("DLOW");
+        mediaDetails=await axios.get(`/api/chat/getMediaDetails/${data.message}`);
+        console.log("Mediadetails",mediaDetails);
+        lastMessage=`${mediaDetails.data.category} sent`
+    }
     if(data.receiverId[0]){
     const res=await axios.get(`/api/chat/newFriendSend/${data.receiverId[0]}`);
     dispatch(addFriend({
@@ -202,6 +209,7 @@ else{
 socket.on('messageReceived',async(data)=>{
     const selectedConversationId=store.getState().chat.selectedConversationId
     const user=store.getState().auth.userData;
+    console.log("userId",user);
     const userId=user.id;
     if(data.conversationId===selectedConversationId){
         console.log("message Recieved");
@@ -210,8 +218,9 @@ socket.on('messageReceived',async(data)=>{
             intervals:data.intervals
         }));
     }
-    console.log("messageReceived");
+    console.log("messageReceived ",data.conversationId);
     dispatch(updateLastMessageStatus({
+        lastMessageRecieveTime:data.lastMessageRecieveTime,
         conversationId:data.conversationId,
         intervals:data.intervals
     }));
@@ -232,20 +241,23 @@ socket.on('openedConv',async(data)=>{
     console.log("openedConv");
     if(Object.keys(chatMeta).length !== 0){
     dispatch(updateLastMessageStatus({
+        lastMessageRecieveTime:data.lastMessageRecieveTime,
         conversationId:data.conversationId,
         intervals:data.intervals
     }));
     }
 })
 
-socket.on('messageSaved',(data)=>{
-    const selectedConversationId=store.getState().chat.selectedConversationId;
-    if(data.convId===selectedConversationId){
+socket.on('messageSaved',async(data)=>{
+    console.log("messageSaved ",data.tempId," ",data.messageId);
+    // const selectedConversationId=store.getState().chat.selectedConversationId;
+    
+    
         dispatch(updateMessageId({
             tempId:data.tempId,
             messageId:data.messageId,
         }))
-    }
+    
 })
 socket.on('userTyping',async(data)=>{
     console.log("usertyping.........................")
@@ -342,7 +354,7 @@ socket.on("media:chunk", async (data, ack) => {
         ack();
 
     } catch (error) {
-        console.error("Error processing chunk:", error);
+        console.log("Error processing chunk:", error);
         ack({
             error: error.message
         });
@@ -383,7 +395,7 @@ socket.on('media:error',async(data)=>{
         mediaId:data.mediaId,
         status:"failed"
     }))
-    await updateFileStatus('downloadedFiles',mediaId,"failed");
+    await updateFileStatus('downloadedFiles',data.mediaId,"failed");
 })
 socket.on('startUpload',async(data,callback)=>{
     console.log('START UPLOAD')
@@ -394,7 +406,8 @@ socket.on('startUpload',async(data,callback)=>{
         callback({
             accepted:true
         })
-        startupload(mediaId);
+        console.log("JJK",uploadQueue?.byId[mediaId]);
+        startupload(mediaId,uploadQueue?.byId[mediaId]?.conversationId,uploadQueue?.byId[mediaId]?.conversationType);
     }
     else{
         callback({

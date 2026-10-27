@@ -80,7 +80,8 @@ function initSocket(io, validateToken){
                     conversationId,
                     message: data.message,
                     messageId:message._id,
-                    receiverId: data.receiverId
+                    receiverId: data.receiverId,
+                    messageType:data.messageType
                 });
             }
             else{
@@ -148,7 +149,7 @@ function initSocket(io, validateToken){
                 console.log("blocked status "+data.blocked);
                 for (const id of data.receiverId) {
                         console.log("frejkfjk");
-                        console.log(id);
+                        console.log("jutsu",id);
                         io.to(id).emit('receiveMessage',{
                             conversationId:conversationId,
                             senderId:data.senderId,
@@ -175,6 +176,8 @@ function initSocket(io, validateToken){
 
         })
         socket.on('messageReceived',async(data)=>{
+            const message=await Message.findOne({conversationId:data.conversationId}).sort({createdAt:-1});
+            const lastMessageId=message._id;
             console.log("message Recieved");
             await Conversation.findByIdAndUpdate(
                         data.conversationId,
@@ -189,6 +192,7 @@ function initSocket(io, validateToken){
                 data.participants.forEach((id)=>{
                     const intervals=conversation.blocked.filter(b=>b.blockedBy.equals(socket.userId) && b.blockedUser.equals(id));
                     io.to(id).emit('messageReceived',{
+                        lastMessageRecieveTime:message?.receiveTime,
                         conversationId:data.conversationId,
                         intervals:intervals
                     })
@@ -233,10 +237,12 @@ function initSocket(io, validateToken){
             console.log(data.participants);
             data.participants.forEach(id=>{
             const intervals=conversation.blocked.filter(b=>b.blockedBy.equals(socket.userId) && b.blockedUser.equals(id));
+
             intervals.forEach(itn=>{
                 console.log("gojo "+itn);
             })
             io.to(id).emit('openedConv',{
+                lastMessageRecieveTime:message?.receiveTime,
                 conversationId:data.conversationId,
                 intervals:intervals
             })
@@ -379,7 +385,8 @@ function initSocket(io, validateToken){
                     conversationId,
                     message: data.message,
                     messageId:message._id,
-                    receiverId: data.receiverId
+                    receiverId: data.receiverId,
+                    messageType:data.messageType
                 });
         }
         if(!message){

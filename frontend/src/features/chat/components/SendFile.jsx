@@ -84,7 +84,6 @@ const handleFiles=async(e)=>{
                 mimeType:prev.mimeType,
                 validationErrors:prev.validationErrors,
                 extension:prev.extension
-                
             }))
   dispatch(setSelectedMedia(formatted));
   dispatch(setPreviewMode(true));

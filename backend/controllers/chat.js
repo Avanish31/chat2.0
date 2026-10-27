@@ -72,7 +72,19 @@ async function InitialChatLoader(req,res){
     let lastMessageStatus=false;    
     let lastMessage=null;
     if(chat.conversationType==="dm"){
-        let message=await Message.find({conversationId:chat._id,dummy:false, visibility:req.user._id}).sort({createdAt: -1});
+        let message=await Message.find({conversationId:chat._id,dummy:false, visibility:req.user._id})
+        message = message.map(msg => {
+            const messageTime =
+                msg.senderId.toString() === req.user._id.toString()
+                    ? msg.sendTime
+                    : msg.receiveTime;
+
+            return {
+               ...msg.toObject(),
+                messageTime
+            };
+        });
+        message.sort((a, b) => b.messageTime - a.messageTime);
         const otherId=chat.participants.find(id=>id!=userId);
         let intervals=chat.blocked.filter(b=>b.blockedBy.equals(userId) && b.blockedUser.equals(otherId));
         const lastMessageId = message.length ? message[0]._id : null;
@@ -180,7 +192,7 @@ async function messageHandler(req,res){
     const token=req.cookies?.token;
     const data=validateToken(token);
     const userId=data._id
-    let messages=await Message.find({conversationId:convId, visibility:req.user._id}).sort({createdAt:-1});
+    let messages=await Message.find({conversationId:convId, visibility:req.user._id});
     const conversation=await Conversation.findById(convId);
     const lastSeenMessage=conversation?.lastSeenMessage;
     const { id, type } = req.query;

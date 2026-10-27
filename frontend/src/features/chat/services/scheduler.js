@@ -37,7 +37,7 @@ export function scheduleQueue({
                 break;
             }
             if(queueType==="download"){
-            startTask(nextId);
+                startTask(nextId);
             }
             else{
                 store.dispatch(updateStatusUploadQueue({
